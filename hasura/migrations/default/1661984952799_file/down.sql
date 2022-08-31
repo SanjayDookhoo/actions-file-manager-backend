@@ -1,0 +1,8 @@
+-- Could not auto-generate a down migration.
+-- Please write an appropriate down migration for the SQL below:
+-- CREATE TABLE file (
+-- 	id serial PRIMARY KEY,
+-- 	file_name varchar(50) not null,
+-- 	s3_file_name varchar(50) not null,
+-- 	size int not null
+-- );
