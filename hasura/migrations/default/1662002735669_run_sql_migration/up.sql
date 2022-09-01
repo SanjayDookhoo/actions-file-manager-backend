@@ -1,0 +1,1 @@
+CREATE TYPE access_type_enum AS ENUM ('RESTRICTED', 'ANYONE');

@@ -1,5 +1,5 @@
 table:
-  name: file
+  name: folder
   schema: public
 object_relationships:
   - name: meta

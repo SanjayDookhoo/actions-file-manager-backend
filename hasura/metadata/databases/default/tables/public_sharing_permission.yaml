@@ -1,0 +1,3 @@
+table:
+  name: sharing_permission
+  schema: public

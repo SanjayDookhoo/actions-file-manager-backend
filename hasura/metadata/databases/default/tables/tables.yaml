@@ -1,1 +1,4 @@
 - "!include public_file.yaml"
+- "!include public_folder.yaml"
+- "!include public_meta.yaml"
+- "!include public_sharing_permission.yaml"
