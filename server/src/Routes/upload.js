@@ -16,11 +16,11 @@ const inputPreprocess = (obj) => {
 // https://stackoverflow.com/questions/37336050/pipe-a-stream-to-s3-upload
 const uploadFromStream = (filename, pendingFileWrites) => {
 	var pass = new stream.PassThrough();
-	const filename_split = filename.split('.');
-	const s3_file_name = `${uuidv4()}.${filename_split[filename_split.length - 1]}`;
+	const fileNameSplit = filename.split('.');
+	const storedFileName = `${uuidv4()}.${fileNameSplit[fileNameSplit.length - 1]}`;
 	const params = {
 		Bucket: S3_BUCKET,
-		Key: s3_file_name,
+		Key: storedFileName,
 		Body: pass,
 	};
 	const upload = s3.upload(params).promise();
@@ -29,10 +29,10 @@ const uploadFromStream = (filename, pendingFileWrites) => {
 };
 // https://groups.google.com/g/nodejs/c/p1YGPE4euLU?pli=1
 const upload = async (req, res) => {
-	// s3_file_name is a unique id is used to prevent duplicate filenames from overwriting files, this check for duplicates will have to happen on the database side
-	// the database will also store both the filename and the s3_file_name to uniquely reference a file
+	// storedFileName is a unique id is used to prevent duplicate filenames from overwriting files, this check for duplicates will have to happen on the database side
+	// the database will also store both the filename and the storedFileName to uniquely reference a file
 	const busboy = new BusBoy({ headers: req.headers });
-	let graphql_request = '';
+	let graphqlRequest = '';
 	let pendingFileWrites = [];
 	let fileMeta = [];
 
@@ -45,14 +45,14 @@ const upload = async (req, res) => {
 			.on('finish', function () {
 				fileMeta.push({
 					size: m.bytes,
-					file_name: filename,
+					fileName: filename,
 				});
 			});
 	});
 
 	busboy.on('field', (field, val) => {
 		if (field == 'graphql') {
-			graphql_request = val;
+			graphqlRequest = val;
 		}
 	});
 
@@ -61,11 +61,11 @@ const upload = async (req, res) => {
 		Promise.all(pendingFileWrites).then(async (fileWrites) => {
 			fileWrites.forEach((file, i) => {
 				const { Key } = file;
-				const { file_name, size } = fileMeta[i];
+				const { fileName, size } = fileMeta[i];
 
 				const data = {
-					file_name,
-					s3_file_name: Key,
+					fileName,
+					storedFileName: Key,
 					size,
 				};
 				/*
@@ -75,7 +75,7 @@ const upload = async (req, res) => {
 				index
 				PARTIAL LINE BACKWARD (U+008C)
 				*/
-				graphql_request = graphql_request.replace(
+				graphqlRequest = graphqlRequest.replace(
 					`"Œ${i}Œ"`,
 					inputPreprocess(data)
 				);
@@ -84,7 +84,7 @@ const upload = async (req, res) => {
 			const graphQLClient = new GraphQLClient(GRAPHQL_ENDPOINT, {
 				headers: req.headers, // spread headers received by expressjs, use that to complete the request
 			});
-			const data = await graphQLClient.request(graphql_request);
+			const data = await graphQLClient.request(graphqlRequest);
 			res.json(data);
 		});
 	});

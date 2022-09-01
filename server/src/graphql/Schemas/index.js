@@ -17,16 +17,16 @@ const RootQuery = new GraphQLObjectType({
 		getFile: {
 			type: FileType,
 			args: {
-				s3_file_name: { type: GraphQLString },
-				file_name: { type: GraphQLString },
+				storedFileName: { type: GraphQLString },
+				fileName: { type: GraphQLString },
 			},
 			resolve(parent, args) {
-				const { s3_file_name, file_name } = args;
+				const { storedFileName, fileName } = args;
 				const Expires = 60 * 5 * 1000; // in seconds
-				const ResponseContentDisposition = `attachment; filename="${file_name}"`;
+				const ResponseContentDisposition = `attachment; filename="${fileName}"`;
 				const URL = s3.getSignedUrl('getObject', {
 					Bucket: S3_BUCKET,
-					Key: s3_file_name,
+					Key: storedFileName,
 					Expires,
 					ResponseContentDisposition,
 				});

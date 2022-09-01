@@ -4,11 +4,11 @@ const { S3_BUCKET } = process.env;
 // testing
 // https://stackoverflow.com/questions/27753411/how-do-i-delete-an-object-on-aws-s3-using-javascript
 const remove = async (req, res) => {
-	const { s3_file_name } = req.body.event.data.old;
+	const { storedFileName } = req.body.event.data.old;
 
 	const params = {
 		Bucket: S3_BUCKET,
-		Key: `${s3_file_name}`,
+		Key: `${storedFileName}`,
 	};
 
 	const data = await s3.deleteObject(params, () => { });
