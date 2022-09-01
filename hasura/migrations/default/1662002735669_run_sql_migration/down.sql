@@ -1,3 +1,1 @@
--- Could not auto-generate a down migration.
--- Please write an appropriate down migration for the SQL below:
--- CREATE TYPE access_type_enum AS ENUM ('RESTRICTED', 'ANYONE');
+drop type access_type_enum;

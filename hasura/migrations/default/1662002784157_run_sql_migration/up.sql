@@ -7,6 +7,7 @@ CREATE TABLE sharing_permission (
 );
 CREATE TABLE meta (
 	id serial PRIMARY KEY,
+	user_id varchar(50) not null,
 	created TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 	modified TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 	last_accessed TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -14,7 +15,6 @@ CREATE TABLE meta (
 );
 CREATE TABLE file (
 	id serial PRIMARY KEY,
-	user_id varchar(50) not null,
 	file_name varchar(50) not null,
 	s3_file_name varchar(50) not null,
 	size int not null,
@@ -29,7 +29,6 @@ CREATE TABLE file (
 );
 CREATE TABLE folder (
 	id serial PRIMARY KEY,
-	user_id varchar(50) not null,
 	folder_name varchar(50) not null,
 	sharing_permission_id int,
 	meta_id int,
