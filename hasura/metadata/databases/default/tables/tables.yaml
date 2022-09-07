@@ -2,3 +2,5 @@
 - "!include public_folder.yaml"
 - "!include public_meta.yaml"
 - "!include public_sharing_permission.yaml"
+- "!include public_sharing_permission_link.yaml"
+- "!include public_sharing_permission_link_user.yaml"

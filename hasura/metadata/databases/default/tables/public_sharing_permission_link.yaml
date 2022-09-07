@@ -1,0 +1,11 @@
+table:
+  name: sharing_permission_link
+  schema: public
+array_relationships:
+  - name: sharingPermissionLinkUsers
+    using:
+      foreign_key_constraint_on:
+        column: sharing_permission_link_id
+        table:
+          name: sharing_permission_link_user
+          schema: public

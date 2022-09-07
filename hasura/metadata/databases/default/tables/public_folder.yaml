@@ -5,6 +5,21 @@ object_relationships:
   - name: meta
     using:
       foreign_key_constraint_on: meta_id
-  - name: sharingPermission
+  - name: parentFolder
     using:
-      foreign_key_constraint_on: sharing_permission_id
+      foreign_key_constraint_on: parent_folder_id
+array_relationships:
+  - name: childrenFolders
+    using:
+      foreign_key_constraint_on:
+        column: parent_folder_id
+        table:
+          name: folder
+          schema: public
+  - name: files
+    using:
+      foreign_key_constraint_on:
+        column: folder_id
+        table:
+          name: file
+          schema: public

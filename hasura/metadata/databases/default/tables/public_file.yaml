@@ -2,32 +2,9 @@ table:
   name: file
   schema: public
 object_relationships:
+  - name: folder
+    using:
+      foreign_key_constraint_on: folder_id
   - name: meta
     using:
       foreign_key_constraint_on: meta_id
-  - name: sharingPermission
-    using:
-      foreign_key_constraint_on: sharing_permission_id
-remote_relationships:
-  - definition:
-      hasura_fields:
-        - stored_file_name
-        - file_name
-      remote_field:
-        getFile:
-          arguments:
-            fileName: $file_name
-            storedFileName: $stored_file_name
-      remote_schema: file_link
-    name: fileLink
-event_triggers:
-  - name: remove
-    definition:
-      delete:
-        columns: '*'
-      enable_manual: false
-    retry_conf:
-      interval_sec: 10
-      num_retries: 5
-      timeout_sec: 60
-    webhook: '{{BACKEND_BASE_URL}}/remove'

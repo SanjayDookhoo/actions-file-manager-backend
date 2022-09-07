@@ -1,0 +1,3 @@
+table:
+  name: sharing_permission_link_user
+  schema: public
