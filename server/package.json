@@ -6,12 +6,13 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node ./src/index.js",
-    "dev": "nodemon ./src/index.js"
+    "start": "node --es-module-specifier-resolution=node ./src/index.js",
+    "dev": "nodemon --es-module-specifier-resolution=node ./src/index.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@SanjayDookhoo/hasura-args": "^1.0.1",
     "aws-sdk": "^2.1168.0",
     "bcryptjs": "^2.4.3",
     "busboy": "^0.2.14",

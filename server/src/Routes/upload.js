@@ -1,17 +1,15 @@
-import { GraphQLClient } from 'graphql-request';
+import { GraphQLClient, gql } from 'graphql-request';
 import meter from 'stream-meter';
 import BusBoy from 'busboy';
 import { v4 as uuidv4 } from 'uuid';
 import stream from 'stream';
 import s3 from '../s3.js';
+import { objectToGraphqlArgs, objectToGraphqlMutationArgs } from '@SanjayDookhoo/hasura-args';
+import { graphQLClient } from '../endpoint.js';
+import { genericMeta } from '../utils';
+import util  from 'util'
 
 const { GRAPHQL_ENDPOINT, S3_BUCKET } = process.env;
-
-const inputPreprocess = (obj) => {
-	const json = JSON.stringify(obj);
-	const unquoted = json.replace(/"([^"]+)":/g, '$1:');
-	return unquoted;
-};
 
 // https://stackoverflow.com/questions/37336050/pipe-a-stream-to-s3-upload
 const uploadFromStream = (filename, pendingFileWrites) => {
@@ -32,7 +30,7 @@ const upload = async (req, res) => {
 	// storedFileName is a unique id is used to prevent duplicate filenames from overwriting files, this check for duplicates will have to happen on the database side
 	// the database will also store both the filename and the storedFileName to uniquely reference a file
 	const busboy = new BusBoy({ headers: req.headers });
-	let graphqlRequest = '';
+	let filesPath = [];
 	let pendingFileWrites = [];
 	let fileMeta = [];
 
@@ -51,41 +49,80 @@ const upload = async (req, res) => {
 	});
 
 	busboy.on('field', (field, val) => {
-		if (field == 'graphql') {
-			graphqlRequest = val;
+		if (field == 'filesPath') {
+			filesPath = JSON.parse(val);
 		}
 	});
 
 	// issues arise if the res.json is called above multiple times
 	busboy.on('finish', () => {
 		Promise.all(pendingFileWrites).then(async (fileWrites) => {
-			fileWrites.forEach((file, i) => {
-				const { Key } = file;
-				const { fileName, size } = fileMeta[i];
+			const mutationArguments = []
+			const filesPathSet =  [...new Set(filesPath)]
+			const filesPathSetOrdered = filesPathSet.sort((a,b) => {
+				const aNestLevel = a.split('/').length
+				const bNestLevel = b.split('/').length
+				return aNestLevel - bNestLevel
+			})
+			const filesPathSetOrderedMapToFolderId = {}
 
-				const data = {
-					fileName,
-					storedFileName: Key,
-					size,
-				};
-				/*
-				reference sheet: https://www.fileformat.info/info/charset/UTF-8/list.htm
+			filesPathSet.forEach(async fullPath => {
+				const split = fullPath.split('/')
+				const folderName = split[split.length - 1]
+				const path = split.slice(0, split.length - 1).join('/')
+				const mutationArguments = {
+					folderName,
+					parentFolderId: filesPathSetOrderedMapToFolderId[path],
+					meta: genericMeta()
+				}
 
-				PARTIAL LINE BACKWARD (U+008C)
-				index
-				PARTIAL LINE BACKWARD (U+008C)
-				*/
-				graphqlRequest = graphqlRequest.replace(
-					`"Œ${i}Œ"`,
-					inputPreprocess(data)
-				);
-			});
+				const mutation = gql`
+					mutation {
+						insertFolderOne(${objectToGraphqlMutationArgs(mutationArguments)}) {
+							id
+						}
+					}
+				`;
 
-			const graphQLClient = new GraphQLClient(GRAPHQL_ENDPOINT, {
-				headers: req.headers, // spread headers received by expressjs, use that to complete the request
-			});
-			const data = await graphQLClient.request(graphqlRequest);
-			res.json(data);
+				const response = await graphQLClient.request(mutation);
+				filesPathSetOrderedMapToFolderId[fullPath] = response.insertFolderOne.id
+				// console.log(fullPath, response.insertFolderOne.id)
+				console.log(filesPathSetOrderedMapToFolderId)
+			})
+
+			setTimeout(async()=> {
+				fileWrites.forEach((file, i) => {
+					const { Key } = file;
+					const { fileName, size } = fileMeta[i];
+					const filePath = filesPath[i]
+					console.log(filePath)
+	
+					const data = {
+						fileName,
+						storedFileName: Key,
+						size,
+						folderId: filesPathSetOrderedMapToFolderId[filePath],
+						meta: genericMeta()
+					};
+					mutationArguments.push(data)
+	
+					
+				});
+	
+				const mutation = gql`
+					mutation {
+						insertFile(${objectToGraphqlMutationArgs(mutationArguments)}) {
+							returning {
+								id
+							}
+						}
+					}
+				`;
+	
+				const data = await graphQLClient.request(mutation);
+				res.json(data);
+			}, 1000)
+
 		});
 	});
 
