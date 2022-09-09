@@ -59,23 +59,25 @@ const upload = async (req, res) => {
 		Promise.all(pendingFileWrites).then(async (fileWrites) => {
 			const mutationArguments = []
 			const filesPathSet =  [...new Set(filesPath)]
-			const filesPathSetOrdered = filesPathSet.sort((a,b) => {
-				const aNestLevel = a.split('/').length
-				const bNestLevel = b.split('/').length
-				return aNestLevel - bNestLevel
-			})
-			const filesPathSetOrderedMapToFolderId = {}
+			const filesPathMapToFolderId = {}
 
-			filesPathSet.forEach(async fullPath => {
+			const _recursiveFolderCreation = async (fullPath) => {
+				if(!fullPath) return null
+
 				const split = fullPath.split('/')
 				const folderName = split[split.length - 1]
 				const path = split.slice(0, split.length - 1).join('/')
-				const mutationArguments = {
-					folderName,
-					parentFolderId: filesPathSetOrderedMapToFolderId[path],
-					meta: genericMeta()
+				let parentFolderId = filesPathMapToFolderId[path]
+				if(!parentFolderId) {
+					await _recursiveFolderCreation(path)
+					parentFolderId =filesPathMapToFolderId[path]
 				}
 
+				const mutationArguments = {
+					folderName,
+					parentFolderId,
+					meta: genericMeta()
+				}
 				const mutation = gql`
 					mutation {
 						insertFolderOne(${objectToGraphqlMutationArgs(mutationArguments)}) {
@@ -85,43 +87,43 @@ const upload = async (req, res) => {
 				`;
 
 				const response = await graphQLClient.request(mutation);
-				filesPathSetOrderedMapToFolderId[fullPath] = response.insertFolderOne.id
-				// console.log(fullPath, response.insertFolderOne.id)
-				console.log(filesPathSetOrderedMapToFolderId)
-			})
+				filesPathMapToFolderId[fullPath] = response.insertFolderOne.id
+			}
 
-			setTimeout(async()=> {
-				fileWrites.forEach((file, i) => {
-					const { Key } = file;
-					const { fileName, size } = fileMeta[i];
-					const filePath = filesPath[i]
-					console.log(filePath)
-	
-					const data = {
-						fileName,
-						storedFileName: Key,
-						size,
-						folderId: filesPathSetOrderedMapToFolderId[filePath],
-						meta: genericMeta()
-					};
-					mutationArguments.push(data)
-	
-					
-				});
-	
-				const mutation = gql`
-					mutation {
-						insertFile(${objectToGraphqlMutationArgs(mutationArguments)}) {
-							returning {
-								id
-							}
+			// forEach does not work as intended, but this does, 
+			// https://stackoverflow.com/a/37576787/4224964 (Reading in series)
+			// Reading in series chosen because the next folder creation may need the folder created before
+			for (const fullPath of filesPathSet) {
+				await _recursiveFolderCreation(fullPath)
+			}
+
+			fileWrites.forEach((file, i) => {
+				const { Key } = file;
+				const { fileName, size } = fileMeta[i];
+				const filePath = filesPath[i]
+
+				const data = {
+					fileName,
+					storedFileName: Key,
+					size,
+					folderId: filesPathMapToFolderId[filePath],
+					meta: genericMeta()
+				};
+				mutationArguments.push(data)
+			});
+
+			const mutation = gql`
+				mutation {
+					insertFile(${objectToGraphqlMutationArgs(mutationArguments)}) {
+						returning {
+							id
 						}
 					}
-				`;
-	
-				const data = await graphQLClient.request(mutation);
-				res.json(data);
-			}, 1000)
+				}
+			`;
+
+			const data = await graphQLClient.request(mutation);
+			res.json(data);
 
 		});
 	});
