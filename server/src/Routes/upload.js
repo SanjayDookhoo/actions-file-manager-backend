@@ -4,7 +4,7 @@ import BusBoy from 'busboy';
 import { v4 as uuidv4 } from 'uuid';
 import stream from 'stream';
 import s3 from '../s3.js';
-import { objectToGraphqlArgs, objectToGraphqlMutationArgs } from '@SanjayDookhoo/hasura-args';
+import { objectToGraphqlArgs, objectToGraphqlMutationArgs } from 'hasura-args';
 import { graphQLClient } from '../endpoint.js';
 import { genericMeta } from '../utils';
 import util  from 'util'
@@ -107,7 +107,7 @@ const upload = async (req, res) => {
 			fileWrites.forEach((file, i) => {
 				const { Key } = file;
 				const { fileName, size } = fileMeta[i];
-				const filePath = fields.filesPath[i]
+				const filePath = filesPath[i]
 
 				const data = {
 					fileName,
