@@ -31,7 +31,7 @@ const upload = async (req, res) => {
 	// the database will also store both the filename and the storedFileName to uniquely reference a file
 	const busboy = new BusBoy({ headers: req.headers });
 	let filesPath = [];
-	let parentFolderId = null
+	let folderId = null
 	let pendingFileWrites = [];
 	let fileMeta = [];
 
@@ -52,8 +52,8 @@ const upload = async (req, res) => {
 	busboy.on('field', (field, val) => {
 		if (field == 'filesPath') {
 			filesPath = JSON.parse(val);
-		}else if (field == 'parentFolderId') {
-			parentFolderId = val
+		}else if (field == 'folderId') {
+			folderId = val == "null" ? null : val
 		}
 	});
 
@@ -77,7 +77,7 @@ const upload = async (req, res) => {
 				}
 				// if still null
 				if(!parentFolderId){
-					parentFolderId = parentFolderId
+					parentFolderId = folderId
 				}
 
 				const mutationArguments = {
@@ -113,7 +113,7 @@ const upload = async (req, res) => {
 					fileName,
 					storedFileName: Key,
 					size,
-					folderId: filesPathMapToFolderId[filePath],
+					folderId: filesPathMapToFolderId[filePath] ? filesPathMapToFolderId[filePath] : folderId,
 					meta: genericMeta()
 				};
 				mutationArguments.push(data)
