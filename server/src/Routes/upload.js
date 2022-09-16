@@ -12,13 +12,13 @@ import util  from 'util'
 const { GRAPHQL_ENDPOINT, S3_BUCKET } = process.env;
 
 // https://stackoverflow.com/questions/37336050/pipe-a-stream-to-s3-upload
-const uploadFromStream = (filename, pendingFileWrites) => {
+const uploadFromStream = (name, pendingFileWrites) => {
 	var pass = new stream.PassThrough();
-	const fileNameSplit = filename.split('.');
-	const storedFileName = `${uuidv4()}.${fileNameSplit[fileNameSplit.length - 1]}`;
+	const nameSplit = name.split('.');
+	const storedName = `${uuidv4()}.${nameSplit[nameSplit.length - 1]}`;
 	const params = {
 		Bucket: S3_BUCKET,
-		Key: storedFileName,
+		Key: storedName,
 		Body: pass,
 	};
 	const upload = s3.upload(params).promise();
@@ -27,24 +27,24 @@ const uploadFromStream = (filename, pendingFileWrites) => {
 };
 // https://groups.google.com/g/nodejs/c/p1YGPE4euLU?pli=1
 const upload = async (req, res) => {
-	// storedFileName is a unique id is used to prevent duplicate filenames from overwriting files, this check for duplicates will have to happen on the database side
-	// the database will also store both the filename and the storedFileName to uniquely reference a file
+	// storedName is a unique id is used to prevent duplicate filenames from overwriting files, this check for duplicates will have to happen on the database side
+	// the database will also store both the filename and the storedName to uniquely reference a file
 	const busboy = new BusBoy({ headers: req.headers });
 	let filesPath = [];
 	let folderId = null
 	let pendingFileWrites = [];
 	let fileMeta = [];
 
-	busboy.on('file', (fieldname, file, filename, encoding, mimetype) => {
+	busboy.on('file', (fieldname, file, name, encoding, mimetype) => {
 		// https://stackoverflow.com/questions/31807073/node-busboy-get-file-size
 		// gets total file size of stream
 		var m = meter();
 		file.pipe(m)
-			.pipe(uploadFromStream(filename, pendingFileWrites))
+			.pipe(uploadFromStream(name, pendingFileWrites))
 			.on('finish', function () {
 				fileMeta.push({
 					size: m.bytes,
-					fileName: filename,
+					name,
 				});
 			});
 	});
@@ -68,7 +68,7 @@ const upload = async (req, res) => {
 				if(!fullPath) return null
 
 				const split = fullPath.split('/')
-				const folderName = split[split.length - 1]
+				const name = split[split.length - 1]
 				const path = split.slice(0, split.length - 1).join('/')
 				let parentFolderId = filesPathMapToFolderId[path]
 				if(!parentFolderId) {
@@ -81,7 +81,7 @@ const upload = async (req, res) => {
 				}
 
 				const mutationArguments = {
-					folderName,
+					name,
 					parentFolderId,
 					meta: genericMeta()
 				}
@@ -106,12 +106,12 @@ const upload = async (req, res) => {
 
 			fileWrites.forEach((file, i) => {
 				const { Key } = file;
-				const { fileName, size } = fileMeta[i];
+				const { name, size } = fileMeta[i];
 				const filePath = filesPath[i]
 
 				const data = {
-					fileName,
-					storedFileName: Key,
+					name,
+					storedName: Key,
 					size,
 					folderId: filesPathMapToFolderId[filePath] ? filesPathMapToFolderId[filePath] : folderId,
 					meta: genericMeta()
