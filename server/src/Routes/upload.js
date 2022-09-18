@@ -7,7 +7,7 @@ import s3 from '../s3.js';
 import { objectToGraphqlArgs, objectToGraphqlMutationArgs } from 'hasura-args';
 import { graphQLClient } from '../endpoint.js';
 import { genericMeta } from '../utils';
-import util  from 'util'
+import util from 'util';
 
 const { GRAPHQL_ENDPOINT, S3_BUCKET } = process.env;
 
@@ -31,7 +31,7 @@ const upload = async (req, res) => {
 	// the database will also store both the filename and the storedName to uniquely reference a file
 	const busboy = new BusBoy({ headers: req.headers });
 	let filesPath = [];
-	let folderId = null
+	let folderId = null;
 	let pendingFileWrites = [];
 	let fileMeta = [];
 
@@ -39,7 +39,8 @@ const upload = async (req, res) => {
 		// https://stackoverflow.com/questions/31807073/node-busboy-get-file-size
 		// gets total file size of stream
 		var m = meter();
-		file.pipe(m)
+		file
+			.pipe(m)
 			.pipe(uploadFromStream(name, pendingFileWrites))
 			.on('finish', function () {
 				fileMeta.push({
@@ -52,39 +53,39 @@ const upload = async (req, res) => {
 	busboy.on('field', (field, val) => {
 		if (field == 'filesPath') {
 			filesPath = JSON.parse(val);
-		}else if (field == 'folderId') {
-			folderId = val == "null" ? null : val
+		} else if (field == 'folderId') {
+			folderId = val == 'null' ? null : val;
 		}
 	});
 
 	// issues arise if the res.json is called above multiple times
 	busboy.on('finish', () => {
 		Promise.all(pendingFileWrites).then(async (fileWrites) => {
-			const mutationArguments = []
-			const filesPathSet =  [...new Set(filesPath)]
-			const filesPathMapToFolderId = {}
+			const mutationArguments = [];
+			const filesPathSet = [...new Set(filesPath)];
+			const filesPathMapToFolderId = {};
 
 			const _recursiveFolderCreation = async (fullPath) => {
-				if(!fullPath) return null
+				if (!fullPath) return null;
 
-				const split = fullPath.split('/')
-				const name = split[split.length - 1]
-				const path = split.slice(0, split.length - 1).join('/')
-				let parentFolderId = filesPathMapToFolderId[path]
-				if(!parentFolderId) {
-					await _recursiveFolderCreation(path)
-					parentFolderId = filesPathMapToFolderId[path]
+				const split = fullPath.split('/');
+				const name = split[split.length - 1];
+				const path = split.slice(0, split.length - 1).join('/');
+				let parentFolderId = filesPathMapToFolderId[path];
+				if (!parentFolderId) {
+					await _recursiveFolderCreation(path);
+					parentFolderId = filesPathMapToFolderId[path];
 				}
 				// if still null
-				if(!parentFolderId){
-					parentFolderId = folderId
+				if (!parentFolderId) {
+					parentFolderId = folderId;
 				}
 
 				const mutationArguments = {
 					name,
 					parentFolderId,
-					meta: genericMeta()
-				}
+					meta: genericMeta(),
+				};
 				const mutation = gql`
 					mutation {
 						insertFolderOne(${objectToGraphqlMutationArgs(mutationArguments)}) {
@@ -94,29 +95,31 @@ const upload = async (req, res) => {
 				`;
 
 				const response = await graphQLClient.request(mutation);
-				filesPathMapToFolderId[fullPath] = response.insertFolderOne.id
-			}
+				filesPathMapToFolderId[fullPath] = response.insertFolderOne.id;
+			};
 
-			// forEach does not work as intended, but this does, 
+			// forEach does not work as intended, but this does,
 			// https://stackoverflow.com/a/37576787/4224964 (Reading in series)
 			// Reading in series chosen because the next folder creation may need the folder created before
 			for (const fullPath of filesPathSet) {
-				await _recursiveFolderCreation(fullPath)
+				await _recursiveFolderCreation(fullPath);
 			}
 
 			fileWrites.forEach((file, i) => {
 				const { Key } = file;
 				const { name, size } = fileMeta[i];
-				const filePath = filesPath[i]
+				const filePath = filesPath[i];
 
 				const data = {
 					name,
 					storedName: Key,
 					size,
-					folderId: filesPathMapToFolderId[filePath] ? filesPathMapToFolderId[filePath] : folderId,
-					meta: genericMeta()
+					folderId: filesPathMapToFolderId[filePath]
+						? filesPathMapToFolderId[filePath]
+						: folderId,
+					meta: genericMeta(),
 				};
-				mutationArguments.push(data)
+				mutationArguments.push(data);
 			});
 
 			const mutation = gql`
@@ -131,7 +134,6 @@ const upload = async (req, res) => {
 
 			const data = await graphQLClient.request(mutation);
 			res.json(data);
-
 		});
 	});
 

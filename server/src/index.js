@@ -8,7 +8,7 @@ import schema from './graphql/Schemas/index.js';
 import createNewFolder from './Routes/createNewFolder.js';
 import search from './Routes/search.js';
 
-const {PORT} = process.env;
+const { PORT } = process.env;
 
 const app = express();
 

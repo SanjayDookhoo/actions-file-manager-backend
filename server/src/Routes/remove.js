@@ -11,7 +11,7 @@ const remove = async (req, res) => {
 		Key: `${storedName}`,
 	};
 
-	const data = await s3.deleteObject(params, () => { });
+	const data = await s3.deleteObject(params, () => {});
 
 	// is return even needed?
 	return res.status(200).json({ message: 'done' });
