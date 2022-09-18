@@ -6,6 +6,7 @@ import upload from './Routes/upload.js';
 import { graphqlHTTP } from 'express-graphql';
 import schema from './graphql/Schemas/index.js';
 import createNewFolder from './Routes/createNewFolder.js';
+import search from './Routes/search.js';
 
 const {PORT} = process.env;
 
@@ -24,6 +25,7 @@ app.use(
 app.post('/upload', upload);
 app.post('/remove', remove);
 app.post('/createNewFolder', createNewFolder);
+app.post('/search', search);
 
 app.listen(PORT, () => {
 	console.log(`Example app listening at http://localhost:${PORT}`);
