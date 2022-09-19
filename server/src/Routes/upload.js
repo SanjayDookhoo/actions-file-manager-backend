@@ -67,6 +67,8 @@ const upload = async (req, res) => {
 
 			const _recursiveFolderCreation = async (fullPath) => {
 				if (!fullPath) return null;
+				if (filesPathMapToFolderId[fullPath])
+					return filesPathMapToFolderId[fullPath];
 
 				const split = fullPath.split('/');
 				const name = split[split.length - 1];
