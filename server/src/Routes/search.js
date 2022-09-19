@@ -3,7 +3,6 @@ import { genericMeta } from '../utils';
 import { objectToGraphqlArgs } from 'hasura-args';
 import { gql } from 'graphql-request';
 
-// because the newFolder has some meta assigned to it, it will be better to handle the entire folder creation on the backend
 const search = async (req, res) => {
 	const { search, folderId } = req.body;
 
@@ -118,7 +117,7 @@ const search = async (req, res) => {
 	};
 
 	const searchResponse = await recursiveFolderSearch(folderId, [], []);
-	res.json(searchResponse);
+	res.status(200).json(searchResponse);
 };
 
 export default search;
