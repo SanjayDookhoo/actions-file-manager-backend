@@ -12,12 +12,17 @@ import copy from './Routes/copy.js';
 import cut from './Routes/cut.js';
 import downloadFIle from './Routes/downloadFIle.js';
 import rename from './Routes/rename.js';
-
-export const clipboard = {};
+import http from 'http';
+import getFolderName from './Routes/getFolderName.js';
+import { webSocket } from './webSocket.js';
 
 const { PORT } = process.env;
 
+export const clipboard = {};
+
 const app = express();
+const server = http.createServer(app);
+webSocket(server);
 
 app.use(cors());
 app.use(express.json());
@@ -38,7 +43,8 @@ app.post('/copy', copy);
 app.post('/paste', paste);
 app.post('/downloadFile', downloadFIle);
 app.post('/rename', rename);
+app.post('/getFolderName', getFolderName);
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
 	console.log(`Example app listening at http://localhost:${PORT}`);
 });
