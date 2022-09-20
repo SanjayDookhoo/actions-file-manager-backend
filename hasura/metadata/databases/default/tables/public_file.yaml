@@ -20,3 +20,14 @@ remote_relationships:
             storedName: $stored_name
       remote_schema: file_link
     name: fileLink
+event_triggers:
+  - name: permanentlyDeleteFile
+    definition:
+      delete:
+        columns: '*'
+      enable_manual: false
+    retry_conf:
+      interval_sec: 10
+      num_retries: 5
+      timeout_sec: 60
+    webhook: '{{BACKEND_BASE_URL}}/permanentlyDeleteFile'

@@ -17,6 +17,7 @@ import getFolderName from './Routes/getFolderName.js';
 import { webSocket } from './webSocket.js';
 import restore from './Routes/restore.js';
 import permanentlyDelete from './Routes/permanentlyDelete.js';
+import permanentlyDeleteFile from './Routes/permanentlyDeleteFile.js';
 
 const { PORT } = process.env;
 
@@ -48,6 +49,7 @@ app.post('/getFolderName', getFolderName);
 app.post('/remove', remove);
 app.post('/restore', restore);
 app.post('/permanentlyDelete', permanentlyDelete);
+app.post('/permanentlyDeleteFile', permanentlyDeleteFile);
 
 server.listen(PORT, () => {
 	console.log(`Example app listening at http://localhost:${PORT}`);
