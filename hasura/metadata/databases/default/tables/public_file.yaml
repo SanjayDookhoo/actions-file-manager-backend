@@ -8,3 +8,15 @@ object_relationships:
   - name: meta
     using:
       foreign_key_constraint_on: meta_id
+remote_relationships:
+  - definition:
+      hasura_fields:
+        - name
+        - stored_name
+      remote_field:
+        getFile:
+          arguments:
+            name: $name
+            storedName: $stored_name
+      remote_schema: file_link
+    name: fileLink
