@@ -15,6 +15,8 @@ import rename from './Routes/rename.js';
 import http from 'http';
 import getFolderName from './Routes/getFolderName.js';
 import { webSocket } from './webSocket.js';
+import restore from './Routes/restore.js';
+import permanentlyDelete from './Routes/permanentlyDelete.js';
 
 const { PORT } = process.env;
 
@@ -35,7 +37,6 @@ app.use(
 ); // https://www.youtube.com/watch?v=Dr2dDWzThK8
 
 app.post('/upload', upload);
-app.post('/remove', remove);
 app.post('/createNewFolder', createNewFolder);
 app.post('/search', search);
 app.post('/cut', cut);
@@ -44,6 +45,9 @@ app.post('/paste', paste);
 app.post('/downloadFile', downloadFIle);
 app.post('/rename', rename);
 app.post('/getFolderName', getFolderName);
+app.post('/remove', remove);
+app.post('/restore', restore);
+app.post('/permanentlyDelete', permanentlyDelete);
 
 server.listen(PORT, () => {
 	console.log(`Example app listening at http://localhost:${PORT}`);
