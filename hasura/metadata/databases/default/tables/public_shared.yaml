@@ -1,0 +1,3 @@
+table:
+  name: shared
+  schema: public

@@ -5,6 +5,7 @@ import { WebSocketLink } from 'apollo-link-ws';
 import { SubscriptionClient } from 'subscriptions-transport-ws';
 import gql from 'graphql-tag';
 import { objectToGraphqlArgs } from 'hasura-args';
+import { graphQLClient } from './endpoint';
 
 const { GRAPHQL_ENDPOINT_WS } = process.env;
 
@@ -30,40 +31,77 @@ const createSubscriptionObservable = (wsurl, query, variables) => {
 	return execute(link, { query: query, variables: variables });
 };
 
-const subscriptionClient = (subscriptionOf, args) => {
-	const folderSubscriptionGraphql = gql`
-		subscription {
-			folder(${objectToGraphqlArgs(args)}) {
-				id
-				name
-				meta {
-					modified
-					created
-					lastAccessed
+const subscriptionClient = async (subscriptionOf, args) => {
+	let SUBSCRIBE_QUERY;
+	let newArgs;
+	if (args == 'Shared with me') {
+		const otherArgs = {
+			where: { userId: { _eq: '123' } },
+		};
+		const query = gql`
+            query {
+                shared(${objectToGraphqlArgs(otherArgs)}) {
+                    sharingIdList
+                }
+            }
+        `;
+
+		const res = await graphQLClient.request(query);
+
+		let _in;
+		if (res.shared.length != 0) {
+			_in = JSON.parse(res.shared[0].sharingIdList);
+		} else {
+			_in = [];
+		}
+
+		newArgs = {
+			where: {
+				_and: [
+					{
+						meta: {
+							sharingPermission: {
+								sharingPermissionLinks: { link: { _in } },
+							},
+						},
+					},
+					{ deleted: { _eq: false } },
+				],
+			},
+		};
+	} else {
+		newArgs = args;
+	}
+	if (subscriptionOf == 'File') {
+		SUBSCRIBE_QUERY = gql`
+			subscription {
+				file(${objectToGraphqlArgs(newArgs)}) {
+					id
+					name
+					size
+					meta {
+						modified
+						created
+						lastAccessed
+					}
 				}
 			}
-		}
-	`;
-
-	const fileSubscriptionGraphql = gql`
-		subscription {
-			file(${objectToGraphqlArgs(args)}) {
-				id
-				name
-				size
-				meta {
-					modified
-					created
-					lastAccessed
+		`;
+	} else if (subscriptionOf == 'Folder') {
+		SUBSCRIBE_QUERY = gql`
+			subscription {
+				folder(${objectToGraphqlArgs(newArgs)}) {
+					id
+					name
+					meta {
+						modified
+						created
+						lastAccessed
+					}
 				}
 			}
-		}
-	`;
-
-	const SUBSCRIBE_QUERY =
-		subscriptionOf == 'File'
-			? fileSubscriptionGraphql
-			: folderSubscriptionGraphql;
+		`;
+	}
 	return createSubscriptionObservable(GRAPHQL_ENDPOINT_WS, SUBSCRIBE_QUERY);
 };
 
@@ -73,7 +111,7 @@ export const webSocket = (server) => {
 	wss.on('connection', (socket) => {
 		console.log('a new client connected');
 		let consumers = {};
-		socket.on('message', (data) => {
+		socket.on('message', async (data) => {
 			const { subscriptionOf, args } = JSON.parse(data);
 
 			// console.log(args);
@@ -83,9 +121,8 @@ export const webSocket = (server) => {
 				consumers[subscriptionOf].unsubscribe;
 			}
 
-			consumers[subscriptionOf] = subscriptionClient(
-				subscriptionOf,
-				args
+			consumers[subscriptionOf] = (
+				await subscriptionClient(subscriptionOf, args)
 			).subscribe(
 				(data) => {
 					// Do something on receipt of the event
