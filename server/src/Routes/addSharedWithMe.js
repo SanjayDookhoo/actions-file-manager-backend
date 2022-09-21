@@ -3,7 +3,7 @@ import { genericMeta } from '../utils';
 import { objectToGraphqlArgs, objectToGraphqlMutationArgs } from 'hasura-args';
 import { gql } from 'graphql-request';
 
-const addSharedIdLink = async (req, res) => {
+const addSharedWithMe = async (req, res) => {
 	const { sharedIdLink } = req.body;
 	if (!sharedIdLink) {
 		res.json({});
@@ -65,4 +65,4 @@ const addSharedIdLink = async (req, res) => {
 	res.json({});
 };
 
-export default addSharedIdLink;
+export default addSharedWithMe;

@@ -18,7 +18,7 @@ import { webSocket } from './webSocket.js';
 import restore from './Routes/restore.js';
 import permanentlyDelete from './Routes/permanentlyDelete.js';
 import permanentlyDeleteFile from './Routes/permanentlyDeleteFile.js';
-import addSharedIdLink from './Routes/addSharedIdLink.js';
+import addSharedWithMe from './Routes/addSharedWithMe.js';
 
 const { PORT } = process.env;
 
@@ -51,7 +51,7 @@ app.post('/remove', remove);
 app.post('/restore', restore);
 app.post('/permanentlyDelete', permanentlyDelete);
 app.post('/permanentlyDeleteFile', permanentlyDeleteFile);
-app.post('/addSharedIdLink', addSharedIdLink);
+app.post('/addSharedWithMe', addSharedWithMe);
 
 server.listen(PORT, () => {
 	console.log(`Example app listening at http://localhost:${PORT}`);
