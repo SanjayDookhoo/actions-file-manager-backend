@@ -19,6 +19,8 @@ import restore from './Routes/restore.js';
 import permanentlyDelete from './Routes/permanentlyDelete.js';
 import permanentlyDeleteFile from './Routes/permanentlyDeleteFile.js';
 import addSharedWithMe from './Routes/addSharedWithMe.js';
+import getSharingLinks from './Routes/getSharingLinks.js';
+import refreshSharingLink from './Routes/refreshSharingLink.js';
 
 const { PORT } = process.env;
 
@@ -52,6 +54,8 @@ app.post('/restore', restore);
 app.post('/permanentlyDelete', permanentlyDelete);
 app.post('/permanentlyDeleteFile', permanentlyDeleteFile);
 app.post('/addSharedWithMe', addSharedWithMe);
+app.post('/getSharingLinks', getSharingLinks);
+app.post('/refreshSharingLink', refreshSharingLink);
 
 server.listen(PORT, () => {
 	console.log(`Example app listening at http://localhost:${PORT}`);
