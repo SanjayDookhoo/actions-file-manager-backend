@@ -40,8 +40,8 @@ const subscriptionClient = async (subscriptionOf, args) => {
 		};
 		const query = gql`
             query {
-                shared(${objectToGraphqlArgs(otherArgs)}) {
-                    sharingIdList
+                sharedWithMe(${objectToGraphqlArgs(otherArgs)}) {
+                    collection
                 }
             }
         `;
@@ -49,8 +49,8 @@ const subscriptionClient = async (subscriptionOf, args) => {
 		const res = await graphQLClient.request(query);
 
 		let _in;
-		if (res.shared.length != 0) {
-			_in = JSON.parse(res.shared[0].sharingIdList);
+		if (res.sharedWithMe.length != 0) {
+			_in = JSON.parse(res.sharedWithMe[0].collection);
 		} else {
 			_in = [];
 		}
@@ -83,6 +83,11 @@ const subscriptionClient = async (subscriptionOf, args) => {
 						modified
 						created
 						lastAccessed
+						sharingPermission {
+							sharingPermissionLinks {
+								link
+							}
+						}
 					}
 				}
 			}
@@ -97,6 +102,11 @@ const subscriptionClient = async (subscriptionOf, args) => {
 						modified
 						created
 						lastAccessed
+						sharingPermission {
+							sharingPermissionLinks {
+								link
+							}
+						}
 					}
 				}
 			}
