@@ -134,14 +134,9 @@ export const webSocket = (server) => {
 			consumers[subscriptionOf] = (
 				await subscriptionClient(subscriptionOf, args)
 			).subscribe(
-				(data) => {
+				(eventData) => {
 					// Do something on receipt of the event
-					socket.send(
-						JSON.stringify({
-							subscriptionOf,
-							data: data.data,
-						})
-					);
+					socket.send(JSON.stringify({ status: 200, data: eventData.data }));
 				},
 				(err) => {
 					console.log('Err');
