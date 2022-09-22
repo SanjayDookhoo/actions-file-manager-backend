@@ -120,35 +120,74 @@ export const webSocket = (server) => {
 
 	wss.on('connection', (socket) => {
 		console.log('a new client connected');
-		let consumers = {};
+		let consumers = [];
 		socket.on('message', async (data) => {
-			const { subscriptionOf, args } = JSON.parse(data);
+			const { subscriptionOf, args, id } = JSON.parse(data);
 
-			// console.log(args);
-
-			// unsubscribe to old query if query has changed
-			if (consumers[subscriptionOf]) {
-				consumers[subscriptionOf].unsubscribe;
-			}
-
-			consumers[subscriptionOf] = (
+			// add to list of consumers, so the most recent consumer will be what is returning a result to the frontend
+			// stale queries wont conflict with new queries
+			consumers.unshift({
+				id,
+				subscriptionOf,
+			});
+			const subscription = (
 				await subscriptionClient(subscriptionOf, args)
 			).subscribe(
 				(eventData) => {
-					// Do something on receipt of the event
-					socket.send(JSON.stringify({ status: 200, data: eventData.data }));
+					// Do something on receipt of the event, if it is the most recent subscription of subscription of
+
+					const mostRecent = consumers.find(
+						(consumer) => consumer.subscriptionOf == subscriptionOf
+					);
+					if (mostRecent.id == id) {
+						socket.send(JSON.stringify({ status: 200, data: eventData.data }));
+						// console.log('sending data');
+					}
 				},
 				(err) => {
 					console.log('Err');
 					console.log(err);
 				}
 			);
+
+			const consumer = consumers.find((consumer) => consumer.id == id);
+			consumer.subscription = subscription;
+
+			const mostRecentFile = consumers.find(
+				(consumer) => consumer.subscriptionOf == 'File'
+			);
+			const mostRecentFolder = consumers.find(
+				(consumer) => consumer.subscriptionOf == 'Folder'
+			);
+
+			const toRemove = consumers.filter(
+				(consumer) =>
+					!(
+						consumer.id == mostRecentFile?.id ||
+						consumer.id == mostRecentFolder?.id
+					)
+			);
+			consumers = consumers.filter(
+				(consumer) =>
+					consumer.id == mostRecentFile?.id ||
+					consumer.id == mostRecentFolder?.id
+			);
+
+			toRemove.forEach((consumer) => {
+				if (consumer.subscription.unsubscribe) {
+					consumer.subscription.unsubscribe();
+				}
+			});
+
+			// console.log(consumers.length);
 		});
 
 		socket.on('close', () => {
 			console.log('client disconnected');
-			Object.values(consumers).forEach((consumer) => {
-				consumer.unsubscribe();
+			consumers.forEach((consumer) => {
+				if (consumer.subscription.unsubscribe) {
+					consumer.subscription.unsubscribe();
+				}
 			});
 		});
 	});
