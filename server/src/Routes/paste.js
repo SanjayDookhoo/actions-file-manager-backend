@@ -22,7 +22,7 @@ const paste = async (req, res) => {
 
 		const selectedFoldersQueryArguments = {
 			where: {
-				id: { _in: selectedFolders },
+				_and: [{ id: { _in: selectedFolders } }, { deleted: { _eq: false } }],
 			},
 		};
 		const selectedFoldersQuery = gql`
@@ -54,7 +54,7 @@ const paste = async (req, res) => {
 		// copy selected Files
 		const selectedFilesQueryArguments = {
 			where: {
-				id: { _in: selectedFiles },
+				_and: [{ id: { _in: selectedFiles } }, { deleted: { _eq: false } }],
 			},
 		};
 		const selectedFilesQuery = gql`
@@ -154,7 +154,10 @@ const recursiveFolderCopy = async ({
 	// search all nested folders
 	const nestedFolderQueryArguments = {
 		where: {
-			parentFolderId: { _eq: folderIdToCopy },
+			_and: [
+				{ parentFolderId: { _eq: folderIdToCopy } },
+				{ deleted: { _eq: false } },
+			],
 		},
 	};
 	const nestedFolderQuery = gql`
@@ -185,7 +188,10 @@ const recursiveFolderCopy = async ({
 	// all files that match the search query
 	const fileQueryArguments = {
 		where: {
-			folderId: { _eq: folderIdToCopy },
+			_and: [
+				{ folderId: { _eq: folderIdToCopy } },
+				{ deleted: { _eq: false } },
+			],
 		},
 	};
 	const fileQuery = gql`
