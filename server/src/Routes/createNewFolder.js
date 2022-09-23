@@ -10,7 +10,7 @@ const createNewFolder = async (req, res) => {
 	const mutationArguments = {
 		name,
 		parentFolderId,
-		meta: genericMeta(),
+		meta: genericMeta({ req }),
 	};
 
 	const mutation = gql`

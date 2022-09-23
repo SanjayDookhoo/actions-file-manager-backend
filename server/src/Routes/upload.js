@@ -34,6 +34,7 @@ const upload = async (req, res) => {
 	let folderId = null;
 	let pendingFileWrites = [];
 	let fileMeta = [];
+	const meta = genericMeta({ req });
 
 	busboy.on('file', (fieldname, file, name, encoding, mimetype) => {
 		// https://stackoverflow.com/questions/31807073/node-busboy-get-file-size
@@ -86,7 +87,7 @@ const upload = async (req, res) => {
 				const mutationArguments = {
 					name,
 					parentFolderId,
-					meta: genericMeta(),
+					meta,
 				};
 				const mutation = gql`
 					mutation {
@@ -119,7 +120,7 @@ const upload = async (req, res) => {
 					folderId: filesPathMapToFolderId[filePath]
 						? filesPathMapToFolderId[filePath]
 						: folderId,
-					meta: genericMeta(),
+					meta,
 				};
 				mutationArguments.push(data);
 			});

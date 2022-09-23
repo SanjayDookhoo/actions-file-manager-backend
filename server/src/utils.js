@@ -2,9 +2,9 @@ import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import _update from 'immutability-helper';
 
-export const genericMeta = () => {
+export const genericMeta = ({ req, userId }) => {
 	return {
-		userId: '123',
+		userId: userId ? userId : getUserId(req),
 		sharingPermission: {
 			sharingPermissionLinks: [
 				{
