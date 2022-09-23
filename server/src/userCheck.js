@@ -26,6 +26,9 @@ export const userEditCheck = async (req, res, next) => {
 	} else if (req.url == '/createNewFolder') {
 		const { parentFolderId } = req.body;
 		selectedFolders = [parentFolderId];
+	} else if (req.url == '/upload') {
+		const folderId = req.headers.folderid;
+		selectedFolders = [folderId];
 	}
 
 	await userAccessTypeCheck({
@@ -73,7 +76,7 @@ export const userViewCheck = async (req, res, next) => {
 };
 
 // maybe can reuse this in upload, even with the res
-const userAccessTypeCheck = async ({
+export const userAccessTypeCheck = async ({
 	userId,
 	selectedFolders,
 	selectedFiles,
@@ -89,14 +92,14 @@ const userAccessTypeCheck = async ({
 	// console.log(initialMetaFetchData.folders);
 
 	if (await allByOwner({ userId, ...initialMetaFetchData })) {
-		next();
-		return;
+		if (next) next();
+		return true;
 	}
 
 	const userCollection = await sharingCollectionOfUserFetch({ userId });
 	if (!userCollection) {
-		res.status(403).json({ message: 'unauthorized' });
-		return;
+		if (res) res.status(403).json({ message: 'unauthorized' });
+		return false;
 	} else {
 		// check all parent folders to determine if they have a view or edit link
 		if (
@@ -106,12 +109,13 @@ const userAccessTypeCheck = async ({
 				...initialMetaFetchData,
 			})
 		) {
-			next();
-			return;
+			if (next) next();
+			return true;
 		}
 	}
 
-	res.status(403).json({ message: 'unauthorized' });
+	if (res) res.status(403).json({ message: 'unauthorized' });
+	return false;
 };
 
 const authorizedForAccessType = async ({
