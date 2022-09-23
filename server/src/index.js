@@ -23,6 +23,7 @@ import getSharingLinks from './Routes/getSharingLinks.js';
 import refreshSharingLink from './Routes/refreshSharingLink.js';
 import { overrideConsole } from 'nodejs-better-console';
 import { ownerCheck, userEditCheck, userViewCheck } from './userCheck.js';
+import getRootUserFolder from './Routes/getRootUserFolder.js';
 
 overrideConsole();
 
@@ -60,6 +61,7 @@ app.post('/permanentlyDelete', ownerCheck, permanentlyDelete);
 app.post('/refreshSharingLink', ownerCheck, refreshSharingLink);
 
 app.post('/permanentlyDeleteFile', permanentlyDeleteFile); // checking inside file for a secret header
+app.post('/getRootUserFolder', getRootUserFolder);
 
 // shouldnt need a check
 app.post('/addSharedWithMe', addSharedWithMe);
