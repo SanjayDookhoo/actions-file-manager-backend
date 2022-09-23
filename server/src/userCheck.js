@@ -75,6 +75,36 @@ export const userViewCheck = async (req, res, next) => {
 	});
 };
 
+export const ownerCheck = async (req, res, next) => {
+	const userId = getUserId(req);
+	let selectedFolders = [],
+		selectedFiles = [];
+
+	// assign selectedFolders and selected Files
+	if (req.url == '/refreshSharingLink') {
+		const { id, __typename } = await getFolderFileIdFromSharingLink(
+			req.body.id
+		);
+		if (__typename == 'Folder') selectedFolders = [id];
+		else selectedFiles = [id];
+	} else if (req.url == '/permanentlyDelete') {
+		selectedFolders = req.body.selectedFolders;
+		selectedFiles = req.body.selectedFiles;
+	} else if (req.url == '/restore') {
+		selectedFolders = req.body.selectedFolders;
+		selectedFiles = req.body.selectedFiles;
+	}
+
+	await userAccessTypeCheck({
+		userId,
+		selectedFolders,
+		selectedFiles,
+		accessType: 'OWNER',
+		res,
+		next,
+	});
+};
+
 // maybe can reuse this in upload, even with the res
 export const userAccessTypeCheck = async ({
 	userId,
@@ -88,34 +118,23 @@ export const userAccessTypeCheck = async ({
 		selectedFolders: selectedFolders.filter((id) => id), // is defined, null cases are all accounted for
 		selectedFiles: selectedFiles.filter((id) => id), // is defined, null cases are all accounted for
 	});
-	// console.log(initialMetaFetchData.files);
-	// console.log(initialMetaFetchData.folders);
-
-	if (await allByOwner({ userId, ...initialMetaFetchData })) {
-		if (next) next();
-		return true;
-	}
 
 	const userCollection = await sharingCollectionOfUserFetch({ userId });
-	if (!userCollection) {
-		if (res) res.status(403).json({ message: 'unauthorized' });
-		return false;
-	} else {
-		// check all parent folders to determine if they have a view or edit link
-		if (
-			await authorizedForAccessType({
-				userCollection,
-				accessType,
-				...initialMetaFetchData,
-			})
-		) {
-			if (next) next();
-			return true;
-		}
+	// check all parent folders to determine if they have a view or edit link
+	if (
+		await authorizedForAccessType({
+			userCollection,
+			accessType,
+			userId,
+			...initialMetaFetchData,
+		})
+	) {
+		next();
+		return;
 	}
 
-	if (res) res.status(403).json({ message: 'unauthorized' });
-	return false;
+	res.status(403).json({ message: 'unauthorized' });
+	return;
 };
 
 const authorizedForAccessType = async ({
@@ -123,43 +142,41 @@ const authorizedForAccessType = async ({
 	folders,
 	userCollection,
 	accessType,
+	userId,
 }) => {
 	let response;
 
 	const _helper = async (record, __typename) => {
 		let isAuthorized = false;
-		if (accessType == 'EDIT') {
-			const editPermissionOfThisFile =
-				record.meta.sharingPermission.sharingPermissionLinks.find(
-					(el) => el.accessType == 'EDIT'
-				);
-			isAuthorized = userCollection.includes(editPermissionOfThisFile.link);
-			// console.log({
-			// 	isAuthorized,
-			// 	userCollection,
-			// 	link: editPermissionOfThisFile.link,
-			// });
-		} else {
-			// either permission is fine for view
-			isAuthorized = userCollection.includes(
-				record.meta.sharingPermission.sharingPermissionLinks[0].link
-			);
-			if (!isAuthorized)
-				// if still false, check the next one
+		if (accessType != 'OWNER') {
+			if (accessType == 'EDIT') {
+				const editPermissionOfThisFile =
+					record.meta.sharingPermission.sharingPermissionLinks.find(
+						(el) => el.accessType == 'EDIT'
+					);
+				isAuthorized = userCollection.includes(editPermissionOfThisFile.link);
+			} else {
+				// either permission is fine for view
 				isAuthorized = userCollection.includes(
-					record.meta.sharingPermission.sharingPermissionLinks[1].link
+					record.meta.sharingPermission.sharingPermissionLinks[0].link
 				);
+				if (!isAuthorized)
+					// if still false, check the next one
+					isAuthorized = userCollection.includes(
+						record.meta.sharingPermission.sharingPermissionLinks[1].link
+					);
+			}
 		}
 
 		if (!isAuthorized) {
 			let id;
 			if (__typename == 'Folder') {
-				const { parentFolderId } = record;
-				if (!parentFolderId) return false; // terminating condition
+				const { parentFolderId, meta } = record;
+				if (!parentFolderId && meta.userId != userId) return false; // terminating condition, not the owner of the root folder
 				id = parentFolderId;
 			} else {
-				const { folderId } = record;
-				if (!folderId) return false; // terminating condition
+				const { folderId, meta } = record;
+				if (!folderId && meta.userId != userId) return false; // terminating condition, not the owner of the root folder
 				id = folderId;
 			}
 
@@ -210,39 +227,6 @@ const authorizedForAccessType = async ({
 	}
 
 	return true;
-};
-
-export const ownerCheck = async (req, res, next) => {
-	const userId = getUserId(req);
-	let selectedFolders = [],
-		selectedFiles = [];
-
-	// assign selectedFolders and selected Files
-	if (req.url == '/refreshSharingLink') {
-		const { id, __typename } = await getFolderFileIdFromSharingLink(
-			req.body.id
-		);
-		if (__typename == 'Folder') selectedFolders = [id];
-		else selectedFiles = [id];
-	} else if (req.url == '/permanentlyDelete') {
-		selectedFolders = req.body.selectedFolders;
-		selectedFiles = req.body.selectedFiles;
-	} else if (req.url == '/restore') {
-		selectedFolders = req.body.selectedFolders;
-		selectedFiles = req.body.selectedFiles;
-	}
-
-	const initialMetaFetchData = await initialMetaFetch({
-		selectedFolders,
-		selectedFiles,
-	});
-
-	if (await allByOwner({ userId, ...initialMetaFetchData })) {
-		next();
-		return;
-	}
-
-	res.status(403).json({ message: 'unauthorized' });
 };
 
 const sharingCollectionOfUserFetch = async ({ userId }) => {
@@ -320,7 +304,8 @@ const initialMetaFetch = async ({ selectedFolders, selectedFiles }) => {
 	return { folders, files };
 };
 
-const allByOwner = async ({ userId, folders, files }) => {
+// returns the "one owner userId" or false
+export const allByOneOwner = ({ folders, files }) => {
 	let allRecords = [];
 
 	allRecords = [...allRecords, ...folders.map((record) => record.meta.userId)];
@@ -328,9 +313,9 @@ const allByOwner = async ({ userId, folders, files }) => {
 	allRecords = [...allRecords, ...files.map((record) => record.meta.userId)];
 
 	allRecords = [...new Set(allRecords)];
-	if (allRecords.length == 1 && allRecords[0] == userId) {
+	if (allRecords.length == 1) {
 		// all userId of the records are the same, and it is of the owner
-		return true;
+		return allRecords[0];
 	}
 	return false;
 };
