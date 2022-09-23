@@ -13,7 +13,6 @@ const paste = async (req, res) => {
 	const { folderId } = req.body;
 	const { selectedFolders, selectedFiles, type } = clipboard[userId];
 	let graphqlResponse;
-	const meta = genericMeta({ userId });
 
 	if (type == 'cut') {
 		delete clipboard[userId];
@@ -84,7 +83,7 @@ const paste = async (req, res) => {
 			const { id } = await copyFolder({
 				folder,
 				parentFolderId: folderId,
-				meta,
+				meta: genericMeta({ userId }),
 			});
 
 			// handle nested folders
@@ -92,7 +91,7 @@ const paste = async (req, res) => {
 				await recursiveFolderCopy({
 					folderIdToCopy: folderId,
 					folderIdToCreateIn: id,
-					meta,
+					meta: genericMeta({ userId }),
 				});
 			}
 		}
@@ -113,7 +112,7 @@ const paste = async (req, res) => {
 			}
 		`;
 		graphqlResponse = await graphQLClient.request(selectedFilesQuery);
-		copyFiles({ files: graphqlResponse.file, folderId, meta });
+		copyFiles({ files: graphqlResponse.file, folderId, userId });
 	}
 
 	res.status(200).json({ message: 'successfully pasted' });
@@ -121,7 +120,7 @@ const paste = async (req, res) => {
 
 export default paste;
 
-const copyFiles = async ({ files, folderId, meta }) => {
+const copyFiles = async ({ files, folderId, userId }) => {
 	const args = [];
 	files.forEach((file) => {
 		const { name, size, storedName } = file;
@@ -149,7 +148,7 @@ const copyFiles = async ({ files, folderId, meta }) => {
 			storedName: newStoredName,
 			size,
 			folderId,
-			meta,
+			meta: genericMeta({ userId }),
 		};
 		args.push(data);
 	});
@@ -168,14 +167,14 @@ const copyFiles = async ({ files, folderId, meta }) => {
 	await graphQLClient.request(mutation);
 };
 
-const copyFolder = async ({ folder, parentFolderId, meta }) => {
+const copyFolder = async ({ folder, parentFolderId, userId }) => {
 	const { name } = folder;
 
 	// create new file records for the database
 	const data = {
 		name,
 		parentFolderId,
-		meta,
+		meta: genericMeta({ userId }),
 	};
 
 	const mutation = gql`
@@ -193,7 +192,7 @@ const copyFolder = async ({ folder, parentFolderId, meta }) => {
 const recursiveFolderCopy = async ({
 	folderIdToCopy,
 	folderIdToCreateIn,
-	meta,
+	userId,
 }) => {
 	let graphqlResponse;
 
@@ -220,14 +219,14 @@ const recursiveFolderCopy = async ({
 		const { id } = await copyFolder({
 			folder,
 			parentFolderId: folderIdToCreateIn,
-			meta,
+			meta: genericMeta({ userId }),
 		});
 
 		// go through folders and find other folders and files
 		await recursiveFolderCopy({
 			folderIdToCopy: folder.id,
 			folderIdToCreateIn: id,
-			meta,
+			meta: genericMeta({ userId }),
 		});
 	}
 
@@ -254,6 +253,6 @@ const recursiveFolderCopy = async ({
 	copyFiles({
 		files: graphqlResponse.file,
 		folderId: folderIdToCreateIn,
-		meta,
+		userId,
 	});
 };

@@ -6,7 +6,7 @@ import stream from 'stream';
 import s3 from '../s3.js';
 import { objectToGraphqlArgs, objectToGraphqlMutationArgs } from 'hasura-args';
 import { graphQLClient } from '../endpoint.js';
-import { genericMeta } from '../utils';
+import { genericMeta, getUserId } from '../utils';
 import util from 'util';
 
 const { GRAPHQL_ENDPOINT, S3_BUCKET } = process.env;
@@ -34,7 +34,7 @@ const upload = async (req, res) => {
 	let folderId = null;
 	let pendingFileWrites = [];
 	let fileMeta = [];
-	const meta = genericMeta({ req });
+	const userId = getUserId(req);
 
 	busboy.on('file', (fieldname, file, name, encoding, mimetype) => {
 		// https://stackoverflow.com/questions/31807073/node-busboy-get-file-size
@@ -87,7 +87,7 @@ const upload = async (req, res) => {
 				const mutationArguments = {
 					name,
 					parentFolderId,
-					meta,
+					meta: genericMeta({ userId }),
 				};
 				const mutation = gql`
 					mutation {
@@ -120,7 +120,7 @@ const upload = async (req, res) => {
 					folderId: filesPathMapToFolderId[filePath]
 						? filesPathMapToFolderId[filePath]
 						: folderId,
-					meta,
+					meta: genericMeta({ userId }),
 				};
 				mutationArguments.push(data);
 			});
