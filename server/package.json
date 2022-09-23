@@ -25,6 +25,7 @@
     "graphql-request": "^4.3.0",
     "graphql-tag": "^2.9.2",
     "hasura-args": "^1.0.2",
+    "immutability-helper": "^3.1.1",
     "jsonwebtoken": "^8.5.1",
     "nodejs-better-console": "^1.0.4",
     "stream-meter": "^1.0.4",

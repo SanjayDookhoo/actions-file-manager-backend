@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
+import _update from 'immutability-helper';
 
 export const genericMeta = () => {
 	return {
@@ -26,3 +27,5 @@ export const getUserId = (req) => {
 	const decoded = jwt.decode(auth.split(' ')[1]);
 	return decoded['https://hasura.io/jwt/claims']['x-hasura-user-id']; // TODO, user needs to enter the path to the id
 };
+
+export const update = _update; // does not allow vs code importing because it is not a named export, this makes it easier
