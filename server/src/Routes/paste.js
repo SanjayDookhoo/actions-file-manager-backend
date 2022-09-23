@@ -17,6 +17,52 @@ const paste = async (req, res) => {
 
 	if (type == 'cut') {
 		delete clipboard[userId];
+
+		let args, mutation, response;
+
+		args = {
+			where: {
+				id: { _in: selectedFolders },
+			},
+			_set: {
+				parentFolderId: folderId,
+			},
+		};
+		mutation = gql`
+			mutation {
+				updateFolder(${objectToGraphqlMutationArgs(args)}) {
+					returning {
+						id
+						meta {
+							id
+						}
+					}
+				}
+			}
+		`;
+		response = await graphQLClient.request(mutation);
+
+		args = {
+			where: {
+				id: { _in: selectedFiles },
+			},
+			_set: {
+				folderId: folderId,
+			},
+		};
+		mutation = gql`
+			mutation {
+				updateFile(${objectToGraphqlMutationArgs(args)}) {
+					returning {
+						id
+						meta {
+							id
+						}
+					}
+				}
+			}
+		`;
+		response = await graphQLClient.request(mutation);
 	} else {
 		// copy selected folders
 
