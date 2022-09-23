@@ -168,18 +168,22 @@ const authorizedForAccessType = async ({
 			}
 		}
 
-		if (!isAuthorized) {
-			let id;
-			if (__typename == 'Folder') {
-				const { parentFolderId, meta } = record;
-				if (!parentFolderId && meta.userId != userId) return false; // terminating condition, not the owner of the root folder
-				id = parentFolderId;
-			} else {
-				const { folderId, meta } = record;
-				if (!folderId && meta.userId != userId) return false; // terminating condition, not the owner of the root folder
-				id = folderId;
-			}
+		if (isAuthorized) return true;
 
+		let id;
+		if (__typename == 'Folder') {
+			const { parentFolderId, meta } = record;
+			if (!parentFolderId && meta.userId != userId) return false; // terminating condition, not the owner of the root folder
+			if (!parentFolderId && meta.userId == userId) return true; // root folder is the user's folder
+			id = parentFolderId;
+		} else {
+			const { folderId, meta } = record;
+			if (!folderId && meta.userId != userId) return false; // terminating condition, not the owner of the root folder\
+			if (!folderId && meta.userId == userId) return true; // root folder is the user's folder
+			id = folderId;
+		}
+
+		if (id) {
 			// fetch parent data
 			const queryArgs = {
 				where: {
@@ -187,21 +191,22 @@ const authorizedForAccessType = async ({
 				},
 			};
 			const query = gql`
-				query {
-					folder(${objectToGraphqlArgs(queryArgs)}) {
-						parentFolderId
-						meta {
-							userId
-							sharingPermission{
-								sharingPermissionLinks{
-									accessType
-									link
+					query {
+						folder(${objectToGraphqlArgs(queryArgs)}) {
+							id
+							parentFolderId
+							meta {
+								userId
+								sharingPermission{
+									sharingPermissionLinks{
+										accessType
+										link
+									}
 								}
 							}
 						}
 					}
-				}
-			`;
+				`;
 			response = await graphQLClient.request(query);
 
 			isAuthorized = await authorizedForAccessType({
@@ -209,11 +214,12 @@ const authorizedForAccessType = async ({
 				folders: [response.folder[0]],
 				userCollection,
 				accessType,
+				userId,
 			});
-			console.log({ isAuthorized });
-			if (!isAuthorized) return false; // terminating condition
+			// console.log(isAuthorized);
+			return isAuthorized; // terminating condition
+			// if (!isAuthorized) return false; // terminating condition
 		}
-		return true;
 	};
 
 	for (const folder of folders) {
@@ -246,7 +252,7 @@ const sharingCollectionOfUserFetch = async ({ userId }) => {
 	`;
 	response = await graphQLClient.request(query);
 	return response.sharedWithMe.length == 0
-		? null
+		? []
 		: JSON.parse(response.sharedWithMe[0].collection);
 };
 

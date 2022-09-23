@@ -29,7 +29,7 @@ const paste = async (req, res) => {
 		};
 		mutation = gql`
 			mutation {
-				updateFolder(${objectToGraphqlMutationArgs(args)}) {
+				updateFolder(${objectToGraphqlArgs(args)}) {
 					returning {
 						id
 						meta {
@@ -51,7 +51,7 @@ const paste = async (req, res) => {
 		};
 		mutation = gql`
 			mutation {
-				updateFile(${objectToGraphqlMutationArgs(args)}) {
+				updateFile(${objectToGraphqlArgs(args)}) {
 					returning {
 						id
 						meta {
@@ -83,7 +83,7 @@ const paste = async (req, res) => {
 			const { id } = await copyFolder({
 				folder,
 				parentFolderId: folderId,
-				meta: genericMeta({ userId }),
+				userId,
 			});
 
 			// handle nested folders
@@ -91,7 +91,7 @@ const paste = async (req, res) => {
 				await recursiveFolderCopy({
 					folderIdToCopy: folderId,
 					folderIdToCreateIn: id,
-					meta: genericMeta({ userId }),
+					userId,
 				});
 			}
 		}
@@ -219,14 +219,14 @@ const recursiveFolderCopy = async ({
 		const { id } = await copyFolder({
 			folder,
 			parentFolderId: folderIdToCreateIn,
-			meta: genericMeta({ userId }),
+			userId,
 		});
 
 		// go through folders and find other folders and files
 		await recursiveFolderCopy({
 			folderIdToCopy: folder.id,
 			folderIdToCreateIn: id,
-			meta: genericMeta({ userId }),
+			userId,
 		});
 	}
 
