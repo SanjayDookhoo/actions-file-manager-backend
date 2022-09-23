@@ -31,3 +31,6 @@ event_triggers:
       num_retries: 5
       timeout_sec: 60
     webhook: '{{BACKEND_BASE_URL}}/permanentlyDeleteFile'
+    headers:
+      - name: SECRET_HEADER
+        value_from_env: SECRET_HEADER

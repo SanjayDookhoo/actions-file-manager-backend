@@ -1,7 +1,9 @@
 import { clipboard } from '..';
+import { getUserId } from '../utils';
 
 const cut = async (req, res) => {
-	const { userId, selectedFolders, selectedFiles } = req.body;
+	const userId = getUserId(req);
+	const { selectedFolders, selectedFiles } = req.body;
 
 	clipboard[userId] = {
 		selectedFolders,

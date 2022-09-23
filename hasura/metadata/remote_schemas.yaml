@@ -2,4 +2,7 @@
   definition:
     url: '{{BACKEND_BASE_URL}}/graphql'
     timeout_seconds: 60
+    headers:
+      - name: SECRET_HEADER
+        value_from_env: SECRET_HEADER
   comment: ""

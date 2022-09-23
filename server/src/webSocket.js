@@ -123,6 +123,7 @@ export const webSocket = (server) => {
 		let consumers = [];
 		socket.on('message', async (data) => {
 			const { subscriptionOf, args, id } = JSON.parse(data);
+			// console.log({ subscriptionOf, args, id });
 
 			// add to list of consumers, so the most recent consumer will be what is returning a result to the frontend
 			// stale queries wont conflict with new queries
@@ -141,7 +142,7 @@ export const webSocket = (server) => {
 					);
 					if (mostRecent.id == id) {
 						socket.send(JSON.stringify({ status: 200, data: eventData.data }));
-						// console.log('sending data');
+						// console.log('sending data', eventData.data);
 					}
 				},
 				(err) => {
@@ -151,7 +152,7 @@ export const webSocket = (server) => {
 			);
 
 			const consumer = consumers.find((consumer) => consumer.id == id);
-			consumer.subscription = subscription;
+			if (consumer) consumer.subscription = subscription;
 
 			const mostRecentFile = consumers.find(
 				(consumer) => consumer.subscriptionOf == 'File'
@@ -174,7 +175,7 @@ export const webSocket = (server) => {
 			);
 
 			toRemove.forEach((consumer) => {
-				if (consumer.subscription.unsubscribe) {
+				if (consumer?.subscription?.unsubscribe) {
 					consumer.subscription.unsubscribe();
 				}
 			});
@@ -185,7 +186,7 @@ export const webSocket = (server) => {
 		socket.on('close', () => {
 			console.log('client disconnected');
 			consumers.forEach((consumer) => {
-				if (consumer.subscription.unsubscribe) {
+				if (consumer?.subscription?.unsubscribe) {
 					consumer.subscription.unsubscribe();
 				}
 			});

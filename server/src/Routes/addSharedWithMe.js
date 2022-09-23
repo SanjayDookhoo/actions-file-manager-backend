@@ -1,19 +1,22 @@
 import { graphQLClient } from '../endpoint';
-import { genericMeta } from '../utils';
+import { genericMeta, getUserId } from '../utils';
 import { objectToGraphqlArgs, objectToGraphqlMutationArgs } from 'hasura-args';
 import { gql } from 'graphql-request';
 
 const addSharedWithMe = async (req, res) => {
-	const { sharedIdLink } = req.body;
-	if (!sharedIdLink) {
+	const { link } = req.body;
+	if (!link) {
 		res.json({});
 		return;
 	}
 
 	let response;
 
+	const userId = getUserId(req);
+	if (!userId) return 400;
+
 	const queryArgs = {
-		where: { userId: { _eq: '123' } },
+		where: { userId: { _eq: userId } },
 	};
 
 	const query = gql`
@@ -27,13 +30,13 @@ const addSharedWithMe = async (req, res) => {
 
 	if (response.sharedWithMe.length == 0) {
 		const mutationArgs = {
-			userId: '123', // TODO change
-			collection: JSON.stringify([sharedIdLink]),
+			userId, // TODO change
+			collection: JSON.stringify([link]),
 		};
 
 		const mutation = gql`
 			mutation {
-				insertSharedOne(${objectToGraphqlMutationArgs(mutationArgs)}) {
+				insertSharedWithMeOne(${objectToGraphqlMutationArgs(mutationArgs)}) {
 					id
 				}
 			}
@@ -42,17 +45,17 @@ const addSharedWithMe = async (req, res) => {
 	} else {
 		const collection = JSON.parse(response.sharedWithMe[0].collection);
 
-		if (!collection.includes(sharedIdLink)) {
+		if (!collection.includes(link)) {
 			const mutationArgs = {
-				where: { userId: { _eq: '123' } },
+				where: { userId: { _eq: userId } },
 				_set: {
-					collection: JSON.stringify([...collection, sharedIdLink]),
+					collection: JSON.stringify([...collection, link]),
 				},
 			};
 
 			const mutation = gql`
 				mutation {
-					updateShared(${objectToGraphqlArgs(mutationArgs)}) {
+					updateSharedWithMe(${objectToGraphqlArgs(mutationArgs)}) {
 						returning {
 							id
 						}

@@ -26,6 +26,7 @@
     "graphql-tag": "^2.9.2",
     "hasura-args": "^1.0.2",
     "jsonwebtoken": "^8.5.1",
+    "nodejs-better-console": "^1.0.4",
     "stream-meter": "^1.0.4",
     "subscriptions-transport-ws": "^0.9.19",
     "uuid": "^8.0.0",

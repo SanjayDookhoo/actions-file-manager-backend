@@ -21,6 +21,10 @@ import permanentlyDeleteFile from './Routes/permanentlyDeleteFile.js';
 import addSharedWithMe from './Routes/addSharedWithMe.js';
 import getSharingLinks from './Routes/getSharingLinks.js';
 import refreshSharingLink from './Routes/refreshSharingLink.js';
+import { overrideConsole } from 'nodejs-better-console';
+import { ownerCheck, userEditCheck, userViewCheck } from './userCheck.js';
+
+overrideConsole();
 
 const { PORT } = process.env;
 
@@ -40,22 +44,25 @@ app.use(
 	})
 ); // https://www.youtube.com/watch?v=Dr2dDWzThK8
 
-app.post('/upload', upload);
-app.post('/createNewFolder', createNewFolder);
-app.post('/search', search);
-app.post('/cut', cut);
-app.post('/copy', copy);
-app.post('/paste', paste);
-app.post('/downloadFile', downloadFIle);
-app.post('/rename', rename);
-app.post('/getFolderName', getFolderName);
-app.post('/remove', remove);
-app.post('/restore', restore);
-app.post('/permanentlyDelete', permanentlyDelete);
-app.post('/permanentlyDeleteFile', permanentlyDeleteFile);
+app.post('/upload', userEditCheck, upload);
+app.post('/createNewFolder', userEditCheck, createNewFolder);
+app.post('/cut', userEditCheck, cut);
+app.post('/paste', userEditCheck, paste);
+app.post('/rename', userEditCheck, rename);
+app.post('/remove', userEditCheck, remove);
+app.post('/search', userViewCheck, search);
+app.post('/copy', userViewCheck, copy);
+app.post('/downloadFile', userViewCheck, downloadFIle);
+app.post('/getFolderName', userViewCheck, getFolderName);
+app.post('/getSharingLinks', userViewCheck, getSharingLinks); // check if owner inside function, and return both if so, otherwise just return view
+app.post('/restore', ownerCheck, restore);
+app.post('/permanentlyDelete', ownerCheck, permanentlyDelete);
+app.post('/refreshSharingLink', ownerCheck, refreshSharingLink);
+
+app.post('/permanentlyDeleteFile', permanentlyDeleteFile); // checking inside file for a secret header
+
+// shouldnt need a check
 app.post('/addSharedWithMe', addSharedWithMe);
-app.post('/getSharingLinks', getSharingLinks);
-app.post('/refreshSharingLink', refreshSharingLink);
 
 server.listen(PORT, () => {
 	console.log(`Example app listening at http://localhost:${PORT}`);

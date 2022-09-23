@@ -1,9 +1,10 @@
 import { graphQLClient } from '../endpoint';
-import { genericMeta } from '../utils';
+import { genericMeta, getUserId } from '../utils';
 import { objectToGraphqlArgs } from 'hasura-args';
 import { gql } from 'graphql-request';
 
 const search = async (req, res) => {
+	const userId = getUserId(req);
 	const { search, folderId } = req.body;
 
 	const recursiveFolderSearch = async (
@@ -17,9 +18,10 @@ const search = async (req, res) => {
 		// search all nested folders
 		const nestedFolderQueryArguments = {
 			where: {
-				_and: {
-					parentFolderId: folderId ? { _eq: folderId } : { _isNull: true },
-				},
+				_and: [
+					{ parentFolderId: folderId ? { _eq: folderId } : { _isNull: true } },
+					{ meta: { userId: folderId ? { _isNull: false } : { _eq: userId } } }, // if folderId, only show records the user owns in parent root directory, else show all
+				],
 			},
 		};
 		const nestedFolderQuery = gql`

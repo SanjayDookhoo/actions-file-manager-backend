@@ -1,5 +1,5 @@
 import { clipboard } from '..';
-import { genericMeta } from '../utils';
+import { genericMeta, getUserId } from '../utils';
 import { v4 as uuidv4 } from 'uuid';
 import { GraphQLClient, gql } from 'graphql-request';
 import { graphQLClient } from '../endpoint.js';
@@ -9,7 +9,8 @@ import s3 from '../s3.js';
 const { S3_BUCKET } = process.env;
 
 const paste = async (req, res) => {
-	const { userId, folderId } = req.body;
+	const userId = getUserId(req);
+	const { folderId } = req.body;
 	const { selectedFolders, selectedFiles, type } = clipboard[userId];
 	const insertFolderMutationArguments = [];
 	let graphqlResponse;
