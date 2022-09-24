@@ -31,7 +31,7 @@ const upload = async (req, res) => {
 	// the database will also store both the filename and the storedName to uniquely reference a file
 	const busboy = new BusBoy({ headers: req.headers });
 	let filesPath = [];
-	let folderId = null;
+	let folderId = req.headers.folderid;
 	let pendingFileWrites = [];
 	let fileMeta = [];
 	const userId = getUserId({ req });
@@ -54,8 +54,6 @@ const upload = async (req, res) => {
 	busboy.on('field', (field, val) => {
 		if (field == 'filesPath') {
 			filesPath = JSON.parse(val);
-		} else if (field == 'folderId') {
-			folderId = val == 'null' ? null : val;
 		}
 	});
 
