@@ -6,8 +6,9 @@ import { v4 as uuidv4 } from 'uuid';
 
 const refreshSharingLink = async (req, res) => {
 	const { id } = req.body;
+	let args, mutation, query;
 
-	const mutationArgs = {
+	args = {
 		where: {
 			id: { _eq: id },
 		},
@@ -16,9 +17,9 @@ const refreshSharingLink = async (req, res) => {
 		},
 	};
 
-	const mutation = gql`
+	mutation = gql`
 		mutation {
-			updateSharingPermissionLink(${objectToGraphqlArgs(mutationArgs)}) {
+			updateSharingPermissionLink(${objectToGraphqlArgs(args)}) {
 				returning {
 					id
 					link
@@ -28,6 +29,45 @@ const refreshSharingLink = async (req, res) => {
 	`;
 	let response = await graphQLClient.request(mutation);
 	response = response.updateSharingPermissionLink;
+
+	// update modified for file or folder in question
+	const updateModified = async (__typename) => {
+		args = {
+			where: {
+				meta: {
+					sharingPermission: {
+						sharingPermissionLinks: { id: { _eq: id } },
+					},
+				},
+			},
+		};
+		query = gql`
+			query {
+				${__typename}(${objectToGraphqlArgs(args)}) {
+					metaId
+				}
+			}
+		`;
+		const queryResponse = await graphQLClient.request(query);
+		if (queryResponse[__typename].length != 0) {
+			const mutationArgs = {
+				where: {
+					id: { _eq: queryResponse[__typename][0].metaId },
+				},
+				_set: { modified: 'now()' },
+			};
+			const mutation = gql`
+				mutation {
+					updateMeta(${objectToGraphqlArgs(mutationArgs)}) {
+						affected_rows
+					}
+				}
+			`;
+			await graphQLClient.request(mutation);
+		}
+	};
+	await updateModified('file');
+	await updateModified('folder');
 
 	res.json(response);
 };
