@@ -5,7 +5,7 @@ import { graphQLClient } from './endpoint';
 import { getUserId } from './utils';
 
 export const userEditCheck = async (req, res, next) => {
-	const userId = getUserId(req);
+	const userId = getUserId({ req });
 	let selectedFolders = [],
 		selectedFiles = [];
 
@@ -42,7 +42,7 @@ export const userEditCheck = async (req, res, next) => {
 };
 
 export const userViewCheck = async (req, res, next) => {
-	const userId = getUserId(req);
+	const userId = getUserId({ req });
 	let selectedFolders = [],
 		selectedFiles = [];
 
@@ -76,7 +76,7 @@ export const userViewCheck = async (req, res, next) => {
 };
 
 export const ownerCheck = async (req, res, next) => {
-	const userId = getUserId(req);
+	const userId = getUserId({ req });
 	let selectedFolders = [],
 		selectedFiles = [];
 

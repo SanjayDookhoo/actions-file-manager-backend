@@ -14,22 +14,22 @@ const restore = async (req, res) => {
 	if (all) {
 		folderArgs = fileArgs = {
 			where: {
-				deleted: { _eq: true },
+				deletedInRootUserFolderId: { _isNull: false },
 			},
-			_set: { deleted: false },
+			_set: { deletedInRootUserFolderId: null },
 		};
 	} else {
 		folderArgs = {
 			where: {
 				id: { _in: selectedFolders },
 			},
-			_set: { deleted: false },
+			_set: { deletedInRootUserFolderId: null },
 		};
 		fileArgs = {
 			where: {
 				id: { _in: selectedFiles },
 			},
-			_set: { deleted: false },
+			_set: { deletedInRootUserFolderId: null },
 		};
 	}
 

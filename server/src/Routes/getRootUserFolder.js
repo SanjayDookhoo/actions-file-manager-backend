@@ -5,7 +5,7 @@ import { gql } from 'graphql-request';
 
 //create root folder for each user, to prevent the need to deal with null as a parentFolderId or folderId
 const getRootUserFolder = async (req, res) => {
-	const userId = getUserId(req);
+	const userId = getUserId({ req });
 	let response;
 
 	const queryArgs = {

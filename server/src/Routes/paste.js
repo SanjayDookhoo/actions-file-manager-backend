@@ -9,7 +9,7 @@ import s3 from '../s3.js';
 const { S3_BUCKET } = process.env;
 
 const paste = async (req, res) => {
-	const userId = getUserId(req);
+	const userId = getUserId({ req });
 	const { folderId } = req.body;
 	const { selectedFolders, selectedFiles, type } = clipboard[userId];
 	let graphqlResponse;
@@ -67,7 +67,10 @@ const paste = async (req, res) => {
 
 		const selectedFoldersQueryArguments = {
 			where: {
-				_and: [{ id: { _in: selectedFolders } }, { deleted: { _eq: false } }],
+				_and: [
+					{ id: { _in: selectedFolders } },
+					{ deletedInRootUserFolderId: { _isNull: true } },
+				],
 			},
 		};
 		const selectedFoldersQuery = gql`
@@ -99,7 +102,10 @@ const paste = async (req, res) => {
 		// copy selected Files
 		const selectedFilesQueryArguments = {
 			where: {
-				_and: [{ id: { _in: selectedFiles } }, { deleted: { _eq: false } }],
+				_and: [
+					{ id: { _in: selectedFiles } },
+					{ deletedInRootUserFolderId: { _isNull: true } },
+				],
 			},
 		};
 		const selectedFilesQuery = gql`
@@ -201,7 +207,7 @@ const recursiveFolderCopy = async ({
 		where: {
 			_and: [
 				{ parentFolderId: { _eq: folderIdToCopy } },
-				{ deleted: { _eq: false } },
+				{ deletedInRootUserFolderId: { _isNull: true } },
 			],
 		},
 	};
@@ -235,7 +241,7 @@ const recursiveFolderCopy = async ({
 		where: {
 			_and: [
 				{ folderId: { _eq: folderIdToCopy } },
-				{ deleted: { _eq: false } },
+				{ deletedInRootUserFolderId: { _isNull: true } },
 			],
 		},
 	};

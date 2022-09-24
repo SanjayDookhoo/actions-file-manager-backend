@@ -6,6 +6,7 @@ import { SubscriptionClient } from 'subscriptions-transport-ws';
 import gql from 'graphql-tag';
 import { objectToGraphqlArgs } from 'hasura-args';
 import { graphQLClient } from './endpoint';
+import { getUserId } from './utils';
 
 const { GRAPHQL_ENDPOINT_WS } = process.env;
 
@@ -31,12 +32,54 @@ const createSubscriptionObservable = (wsurl, query, variables) => {
 	return execute(link, { query: query, variables: variables });
 };
 
-const subscriptionClient = async (subscriptionOf, args) => {
+const subscriptionClient = async ({ subscriptionOf, args, token }) => {
+	const userId = getUserId({ token });
 	let SUBSCRIBE_QUERY;
 	let newArgs;
-	if (args == 'Shared with me') {
+	let newArgsFile, newArgsFolder;
+	if (args == 'Home') {
 		const otherArgs = {
-			where: { userId: { _eq: '123' } },
+			where: {
+				_and: [
+					{ parentFolderId: { _isNull: true } },
+					{
+						meta: {
+							userId: { _eq: userId },
+						},
+					},
+				],
+			},
+		};
+		const query = gql`
+            query {
+                folder(${objectToGraphqlArgs(otherArgs)}) {
+                    id
+                }
+            }
+        `;
+		const res = await graphQLClient.request(query);
+		const id = res.folder[0].id;
+		console.log({ id });
+
+		newArgsFile = {
+			where: {
+				_and: [
+					{ folderId: { _eq: id } },
+					{ deletedInRootUserFolderId: { _isNull: true } },
+				],
+			},
+		};
+		newArgsFolder = {
+			where: {
+				_and: [
+					{ parentFolderId: { _eq: id } },
+					{ deletedInRootUserFolderId: { _isNull: true } },
+				],
+			},
+		};
+	} else if (args == 'Shared with me') {
+		const otherArgs = {
+			where: { userId: { _eq: userId } },
 		};
 		const query = gql`
             query {
@@ -65,8 +108,14 @@ const subscriptionClient = async (subscriptionOf, args) => {
 							},
 						},
 					},
-					{ deleted: { _eq: false } },
+					{ deletedInRootUserFolderId: { _isNull: true } },
 				],
+			},
+		};
+	} else if (args == 'Recycle bin') {
+		newArgs = {
+			where: {
+				deletedInRootUserFolderId: { _eq: userId },
 			},
 		};
 	} else {
@@ -75,7 +124,7 @@ const subscriptionClient = async (subscriptionOf, args) => {
 	if (subscriptionOf == 'File') {
 		SUBSCRIBE_QUERY = gql`
 			subscription {
-				file(${objectToGraphqlArgs(newArgs)}) {
+				file(${objectToGraphqlArgs(newArgs ? newArgs : newArgsFile)}) {
 					id
 					name
 					size
@@ -95,7 +144,7 @@ const subscriptionClient = async (subscriptionOf, args) => {
 	} else if (subscriptionOf == 'Folder') {
 		SUBSCRIBE_QUERY = gql`
 			subscription {
-				folder(${objectToGraphqlArgs(newArgs)}) {
+				folder(${objectToGraphqlArgs(newArgs ? newArgs : newArgsFolder)}) {
 					id
 					name
 					meta {
@@ -121,8 +170,9 @@ export const webSocket = (server) => {
 	wss.on('connection', (socket) => {
 		console.log('a new client connected');
 		let consumers = [];
-		socket.on('message', async (data) => {
-			const { subscriptionOf, args, id } = JSON.parse(data);
+		socket.on('message', async (_data) => {
+			const data = JSON.parse(_data);
+			const { subscriptionOf, id } = data;
 			// console.log({ subscriptionOf, args, id });
 
 			// add to list of consumers, so the most recent consumer will be what is returning a result to the frontend
@@ -131,9 +181,7 @@ export const webSocket = (server) => {
 				id,
 				subscriptionOf,
 			});
-			const subscription = (
-				await subscriptionClient(subscriptionOf, args)
-			).subscribe(
+			const subscription = (await subscriptionClient({ ...data })).subscribe(
 				(eventData) => {
 					// Do something on receipt of the event, if it is the most recent subscription of subscription of
 

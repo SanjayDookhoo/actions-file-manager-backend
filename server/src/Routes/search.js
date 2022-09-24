@@ -4,7 +4,7 @@ import { objectToGraphqlArgs } from 'hasura-args';
 import { gql } from 'graphql-request';
 
 const search = async (req, res) => {
-	const userId = getUserId(req);
+	const userId = getUserId({ req });
 	const { search, folderId } = req.body;
 
 	const recursiveFolderSearch = async (

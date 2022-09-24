@@ -5,7 +5,7 @@ import { gql } from 'graphql-request';
 
 const getSharingLinks = async (req, res) => {
 	const { id, __typename } = req.body;
-	const userId = getUserId(req);
+	const userId = getUserId({ req });
 	let response;
 
 	if (__typename == 'Folder') {

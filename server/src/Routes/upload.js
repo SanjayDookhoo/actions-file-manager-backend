@@ -34,7 +34,7 @@ const upload = async (req, res) => {
 	let folderId = null;
 	let pendingFileWrites = [];
 	let fileMeta = [];
-	const userId = getUserId(req);
+	const userId = getUserId({ req });
 
 	busboy.on('file', (fieldname, file, name, encoding, mimetype) => {
 		// https://stackoverflow.com/questions/31807073/node-busboy-get-file-size

@@ -2,7 +2,7 @@ import { clipboard } from '..';
 import { getUserId } from '../utils';
 
 const copy = async (req, res) => {
-	const userId = getUserId(req);
+	const userId = getUserId({ req });
 	const { selectedFolders, selectedFiles } = req.body;
 
 	clipboard[userId] = {

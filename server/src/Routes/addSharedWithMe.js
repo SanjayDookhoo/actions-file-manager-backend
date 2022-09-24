@@ -12,7 +12,7 @@ const addSharedWithMe = async (req, res) => {
 
 	let response;
 
-	const userId = getUserId(req);
+	const userId = getUserId({ req });
 	if (!userId) return 400;
 
 	const queryArgs = {

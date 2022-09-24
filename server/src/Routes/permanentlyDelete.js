@@ -14,12 +14,12 @@ const permanentlyDelete = async (req, res) => {
 	if (all) {
 		folderArgs = {
 			where: {
-				deleted: { _eq: true },
+				deletedInRootUserFolderId: { _isNull: false },
 			},
 		};
 		fileArgs = {
 			where: {
-				deleted: { _eq: true },
+				deletedInRootUserFolderId: { _isNull: false },
 			},
 		};
 	} else {
