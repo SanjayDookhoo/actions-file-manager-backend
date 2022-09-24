@@ -98,9 +98,13 @@ const recursiveFolderSearch = async (
 	// search all nested folders
 	const nestedFolderQueryArguments = {
 		where: {
-			folderId: { _eq: folderId },
+			_and: [
+				{ folderId: { _eq: folderId } },
+				{ deletedInRootUserFolderId: { _isNull: true } },
+			],
 		},
 	};
+
 	const nestedFolderQuery = gql`
 		query {
 			folder(${objectToGraphqlArgs(nestedFolderQueryArguments)}) {
@@ -125,10 +129,11 @@ const recursiveFolderSearch = async (
 	// in this folder, find any matches of files or folders
 	const queryArgs = {
 		where: {
-			_and: {
-				_or: orCondition,
-				folderId: { _eq: folderId },
-			},
+			_and: [
+				{ _or: orCondition },
+				{ folderId: { _eq: folderId } },
+				{ deletedInRootUserFolderId: { _isNull: true } },
+			],
 		},
 	};
 	searchResponse = [
