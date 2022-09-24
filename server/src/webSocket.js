@@ -38,6 +38,7 @@ const subscriptionClient = async ({ __typename, args, token }) => {
 	let SUBSCRIBE_QUERY;
 	let newArgs;
 	let newArgsFile, newArgsFolder;
+	let authorizedToEdit, authorizedToView;
 	if (args == 'Home') {
 		const otherArgs = {
 			where: {
@@ -111,14 +112,23 @@ const subscriptionClient = async ({ __typename, args, token }) => {
 			},
 		};
 	} else {
-		const authorized = await userAccessTypeCheck({
+		authorizedToEdit = await userAccessTypeCheck({
 			userId,
 			selectedFolders: [args],
 			selectedFiles: [],
-			accessType: 'VIEW',
+			accessType: 'EDIT',
 		});
 
-		if (authorized) {
+		if (!authorizedToEdit) {
+			authorizedToView = await userAccessTypeCheck({
+				userId,
+				selectedFolders: [args],
+				selectedFiles: [],
+				accessType: 'VIEW',
+			});
+		}
+
+		if (authorizedToEdit || authorizedToView) {
 			// subscribe to folders, where args is the folderId
 			newArgs = {
 				where: {
@@ -142,7 +152,7 @@ const subscriptionClient = async ({ __typename, args, token }) => {
 	const subscribeQuery = (__typename) => {
 		return gql`
 			subscription {
-				${__typename}(${objectToGraphqlArgs(newArgs ? newArgs : newArgsFolder)}) {
+				${__typename}(${objectToGraphqlArgs(newArgs)}) {
 					id
 					name
 					meta {
@@ -160,10 +170,21 @@ const subscriptionClient = async ({ __typename, args, token }) => {
 		`;
 	};
 
-	return createSubscriptionObservable(
-		GRAPHQL_ENDPOINT_WS,
-		subscribeQuery(__typename)
-	);
+	let accessType = null;
+	if (authorizedToEdit) accessType = 'EDIT';
+	else if (authorizedToView) accessType = 'VIEW';
+
+	return {
+		subscriptionObservable: createSubscriptionObservable(
+			GRAPHQL_ENDPOINT_WS,
+			subscribeQuery(__typename)
+		),
+		accessType,
+	};
+	// return createSubscriptionObservable(
+	// 	GRAPHQL_ENDPOINT_WS,
+	// 	subscribeQuery(__typename)
+	// );
 };
 
 export const webSocket = (server) => {
@@ -183,7 +204,12 @@ export const webSocket = (server) => {
 				id,
 				__typename,
 			});
-			const subscription = (await subscriptionClient({ ...data })).subscribe(
+
+			const { subscriptionObservable, accessType } = await subscriptionClient({
+				...data,
+			});
+
+			const subscription = subscriptionObservable.subscribe(
 				(eventData) => {
 					// Do something on receipt of the event, if it is the most recent subscription of subscription of
 
@@ -191,7 +217,9 @@ export const webSocket = (server) => {
 						(consumer) => consumer.__typename == __typename
 					);
 					if (mostRecent.id == id) {
-						socket.send(JSON.stringify({ status: 200, data: eventData.data }));
+						socket.send(
+							JSON.stringify({ status: 200, data: eventData.data, accessType })
+						);
 						// console.log('sending data', eventData.data);
 					}
 				},
