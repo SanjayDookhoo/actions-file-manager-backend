@@ -58,8 +58,7 @@ const subscriptionClient = async ({ subscriptionOf, args, token }) => {
             }
         `;
 		const res = await graphQLClient.request(query);
-		const id = res.folder[0].id;
-		console.log({ id });
+		const id = res.folder.length == 0 ? 0 : res.folder[0].id;
 
 		newArgsFile = {
 			where: {
