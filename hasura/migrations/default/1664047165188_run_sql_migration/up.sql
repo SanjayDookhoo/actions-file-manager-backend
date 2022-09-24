@@ -1,0 +1,5 @@
+CREATE OR REPLACE TRIGGER updateMetaModifiedTrigger
+BEFORE UPDATE
+ON folder
+FOR EACH ROW
+EXECUTE PROCEDURE updateMetaModified();
