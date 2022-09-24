@@ -129,12 +129,12 @@ export const userAccessTypeCheck = async ({
 			...initialMetaFetchData,
 		})
 	) {
-		next();
-		return;
+		if (next) next();
+		return true;
 	}
 
-	res.status(403).json({ message: 'unauthorized' });
-	return;
+	if (res) res.status(403).json({ message: 'unauthorized' });
+	return false;
 };
 
 const authorizedForAccessType = async ({

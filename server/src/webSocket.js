@@ -7,6 +7,7 @@ import gql from 'graphql-tag';
 import { objectToGraphqlArgs } from 'hasura-args';
 import { graphQLClient } from './endpoint';
 import { getUserId } from './utils';
+import { userAccessTypeCheck } from './userCheck';
 
 const { GRAPHQL_ENDPOINT_WS } = process.env;
 
@@ -118,8 +119,42 @@ const subscriptionClient = async ({ subscriptionOf, args, token }) => {
 			},
 		};
 	} else {
-		newArgs = args;
+		const authorized = await userAccessTypeCheck({
+			userId,
+			selectedFolders: [args],
+			selectedFiles: [],
+			accessType: 'VIEW',
+		});
+
+		if (authorized) {
+			// subscribe to folders, where args is the folderId
+			newArgsFile = {
+				where: {
+					_and: [
+						{ folderId: { _eq: args } },
+						{ deletedInRootUserFolderId: { _isNull: true } },
+					],
+				},
+			};
+			newArgsFolder = {
+				where: {
+					_and: [
+						{ parentFolderId: { _eq: args } },
+						{ deletedInRootUserFolderId: { _isNull: true } },
+					],
+				},
+			};
+		} else {
+			// this condition will never be met, so nothing would show if they are not authorized
+			// TODO, return an error instead
+			newArgs = {
+				where: {
+					folderId: { _isNull: true },
+				},
+			};
+		}
 	}
+
 	if (subscriptionOf == 'File') {
 		SUBSCRIBE_QUERY = gql`
 			subscription {
