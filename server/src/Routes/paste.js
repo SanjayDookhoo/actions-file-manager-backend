@@ -11,6 +11,11 @@ const { S3_BUCKET } = process.env;
 const paste = async (req, res) => {
 	const userId = getUserId({ req });
 	const { folderId } = req.body;
+
+	if (!clipboard[userId]) {
+		return res.status(400).json({ message: 'cannot complete paste' });
+	}
+
 	const { selectedFolders, selectedFiles, type } = clipboard[userId];
 	let graphqlResponse;
 
