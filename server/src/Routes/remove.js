@@ -11,7 +11,7 @@ const remove = async (req, res) => {
 	for (const selectedFolder of selectedFolders) {
 		const rootUserFolderId = await getRootUserFolderId({
 			id: selectedFolder,
-			__typename: 'Folder',
+			__typename: 'folder',
 		});
 
 		const folderArgs = {
@@ -35,7 +35,7 @@ const remove = async (req, res) => {
 	for (const selectedFile of selectedFiles) {
 		const rootUserFolderId = await getRootUserFolderId({
 			id: selectedFile,
-			__typename: 'File',
+			__typename: 'file',
 		});
 		console.log(rootUserFolderId);
 
@@ -66,69 +66,38 @@ export default remove;
 const getRootUserFolderId = async ({ id, __typename }) => {
 	// get first folder
 	let record;
-	if (__typename == 'Folder') {
-		const queryArgs = {
-			where: {
-				id: { _eq: id },
-			},
-		};
-		const query = gql`
-			query {
-				folder(${objectToGraphqlArgs(queryArgs)}) {
-					id
-					parentFolderId
-					meta {
-						userId
-						sharingPermission{
-							sharingPermissionLinks{
-								accessType
-								link
-							}
+	const queryArgs = {
+		where: {
+			id: { _eq: id },
+		},
+	};
+	const query = gql`
+		query {
+			${__typename}(${objectToGraphqlArgs(queryArgs)}) {
+				id
+				folderId
+				meta {
+					userId
+					sharingPermission{
+						sharingPermissionLinks{
+							accessType
+							link
 						}
 					}
 				}
 			}
-		`;
-		const response = await graphQLClient.request(query);
-		const { parentFolderId, meta } = response.folder[0];
-		record = {
-			parentFolderId,
-			meta,
-		};
-	} else {
-		const queryArgs = {
-			where: {
-				id: { _eq: id },
-			},
-		};
-		const query = gql`
-			query {
-				file(${objectToGraphqlArgs(queryArgs)}) {
-					id
-					folderId
-					meta {
-						userId
-						sharingPermission{
-							sharingPermissionLinks{
-								accessType
-								link
-							}
-						}
-					}
-				}
-			}
-		`;
-		const response = await graphQLClient.request(query);
-		const { folderId, meta } = response.file[0];
-		record = {
-			parentFolderId: folderId,
-			meta,
-		};
-	}
+		}
+	`;
+	const response = await graphQLClient.request(query);
+	const { folderId, meta } = response[__typename][0];
+	record = {
+		folderId,
+		meta,
+	};
 
 	const _helper = async ({ record }) => {
-		const { id, meta, parentFolderId } = record;
-		if (!parentFolderId) return meta.userId;
+		const { id, meta, folderId } = record;
+		if (!folderId) return meta.userId;
 
 		// fetch parent data
 		const queryArgs = {
@@ -140,7 +109,7 @@ const getRootUserFolderId = async ({ id, __typename }) => {
 			query {
 				folder(${objectToGraphqlArgs(queryArgs)}) {
 					id
-					parentFolderId
+					folderId
 					meta {
 						userId
 						sharingPermission{

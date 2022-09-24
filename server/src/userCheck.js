@@ -15,7 +15,7 @@ export const userEditCheck = async (req, res, next) => {
 		selectedFiles = req.body.selectedFiles;
 	} else if (req.url == '/rename') {
 		const { id, __typename } = req.body;
-		if (__typename == 'Folder') selectedFolders = [id];
+		if (__typename == 'folder') selectedFolders = [id];
 		else selectedFiles = [id];
 	} else if (req.url == '/paste') {
 		const { folderId } = req.body;
@@ -24,8 +24,8 @@ export const userEditCheck = async (req, res, next) => {
 		selectedFolders = req.body.selectedFolders;
 		selectedFiles = req.body.selectedFiles;
 	} else if (req.url == '/createNewFolder') {
-		const { parentFolderId } = req.body;
-		selectedFolders = [parentFolderId];
+		const { folderId } = req.body;
+		selectedFolders = [folderId];
 	} else if (req.url == '/upload') {
 		const folderId = req.headers.folderid;
 		selectedFolders = [folderId];
@@ -49,7 +49,7 @@ export const userViewCheck = async (req, res, next) => {
 	// assign selectedFolders and selected Files
 	if (req.url == '/getSharingLinks') {
 		const { id, __typename } = req.body;
-		if (__typename == 'Folder') selectedFolders = [id];
+		if (__typename == 'folder') selectedFolders = [id];
 		else selectedFiles = [id];
 	} else if (req.url == '/getFolderName') {
 		const { id } = req.body;
@@ -85,7 +85,7 @@ export const ownerCheck = async (req, res, next) => {
 		const { id, __typename } = await getFolderFileIdFromSharingLink(
 			req.body.id
 		);
-		if (__typename == 'Folder') selectedFolders = [id];
+		if (__typename == 'folder') selectedFolders = [id];
 		else selectedFiles = [id];
 	} else if (req.url == '/permanentlyDelete') {
 		selectedFolders = req.body.selectedFolders;
@@ -171,17 +171,10 @@ const authorizedForAccessType = async ({
 		if (isAuthorized) return true;
 
 		let id;
-		if (__typename == 'Folder') {
-			const { parentFolderId, meta } = record;
-			if (!parentFolderId && meta.userId != userId) return false; // terminating condition, not the owner of the root folder
-			if (!parentFolderId && meta.userId == userId) return true; // root folder is the user's folder
-			id = parentFolderId;
-		} else {
-			const { folderId, meta } = record;
-			if (!folderId && meta.userId != userId) return false; // terminating condition, not the owner of the root folder\
-			if (!folderId && meta.userId == userId) return true; // root folder is the user's folder
-			id = folderId;
-		}
+		const { folderId, meta } = record;
+		if (!folderId && meta.userId != userId) return false; // terminating condition, not the owner of the root folder
+		if (!folderId && meta.userId == userId) return true; // root folder is the user's folder
+		id = folderId;
 
 		if (id) {
 			// fetch parent data
@@ -194,7 +187,7 @@ const authorizedForAccessType = async ({
 					query {
 						folder(${objectToGraphqlArgs(queryArgs)}) {
 							id
-							parentFolderId
+							folderId
 							meta {
 								userId
 								sharingPermission{
@@ -223,12 +216,12 @@ const authorizedForAccessType = async ({
 	};
 
 	for (const folder of folders) {
-		const isAuthorized = await _helper(folder, 'Folder');
+		const isAuthorized = await _helper(folder, 'folder');
 		if (!isAuthorized) return false; // terminating condition
 	}
 
 	for (const file of files) {
-		const isAuthorized = await _helper(file, 'File');
+		const isAuthorized = await _helper(file, 'file');
 		if (!isAuthorized) return false; // terminating condition
 	}
 
@@ -257,30 +250,32 @@ const sharingCollectionOfUserFetch = async ({ userId }) => {
 };
 
 const initialMetaFetch = async ({ selectedFolders, selectedFiles }) => {
-	let queryArgs, query, response;
+	let queryArgs, response;
 
 	queryArgs = {
 		where: {
 			id: { _in: selectedFolders },
 		},
 	};
-	query = gql`
-		query {
-			folder(${objectToGraphqlArgs(queryArgs)}) {
-				parentFolderId
-				meta {
-					userId
-					sharingPermission{
-						sharingPermissionLinks{
-							accessType
-							link
+	const query = (__typename) => {
+		return gql`
+			query {
+				${__typename}(${objectToGraphqlArgs(queryArgs)}) {
+					folderId
+					meta {
+						userId
+						sharingPermission{
+							sharingPermissionLinks{
+								accessType
+								link
+							}
 						}
 					}
 				}
 			}
-		}
-	`;
-	response = await graphQLClient.request(query);
+		`;
+	};
+	response = await graphQLClient.request(query('folder'));
 	const folders = response.folder;
 
 	queryArgs = {
@@ -288,23 +283,7 @@ const initialMetaFetch = async ({ selectedFolders, selectedFiles }) => {
 			id: { _in: selectedFiles },
 		},
 	};
-	query = gql`
-		query {
-			file(${objectToGraphqlArgs(queryArgs)}) {
-				folderId
-				meta {
-					userId
-					sharingPermission{
-						sharingPermissionLinks{
-							accessType
-							link
-						}
-					}
-				}
-			}
-		}
-	`;
-	response = await graphQLClient.request(query);
+	response = await graphQLClient.request(query('file'));
 	const files = response.file;
 
 	return { folders, files };
@@ -344,7 +323,7 @@ const getFolderFileIdFromSharingLink = async (id) => {
 	`;
 	response = await graphQLClient.request(query);
 	if (response.folder.length != 0)
-		return { id: response.folder[0].id, __typename: 'Folder' };
+		return { id: response.folder[0].id, __typename: 'folder' };
 
 	query = gql`
 		query {
@@ -355,5 +334,5 @@ const getFolderFileIdFromSharingLink = async (id) => {
 	`;
 	response = await graphQLClient.request(query);
 	if (response.file.length != 0)
-		return { id: response.file[0].id, __typename: 'File' };
+		return { id: response.file[0].id, __typename: 'file' };
 };

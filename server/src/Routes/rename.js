@@ -13,7 +13,7 @@ const rename = async (req, res) => {
 		_set: { name },
 	};
 
-	if (__typename == 'Folder') {
+	if (__typename == 'folder') {
 		mutation = gql`
 			mutation {
 				updateFolder(${objectToGraphqlArgs(args)}) {

@@ -33,7 +33,7 @@ const createSubscriptionObservable = (wsurl, query, variables) => {
 	return execute(link, { query: query, variables: variables });
 };
 
-const subscriptionClient = async ({ subscriptionOf, args, token }) => {
+const subscriptionClient = async ({ __typename, args, token }) => {
 	const userId = getUserId({ token });
 	let SUBSCRIBE_QUERY;
 	let newArgs;
@@ -42,7 +42,7 @@ const subscriptionClient = async ({ subscriptionOf, args, token }) => {
 		const otherArgs = {
 			where: {
 				_and: [
-					{ parentFolderId: { _isNull: true } },
+					{ folderId: { _isNull: true } },
 					{
 						meta: {
 							userId: { _eq: userId },
@@ -61,18 +61,10 @@ const subscriptionClient = async ({ subscriptionOf, args, token }) => {
 		const res = await graphQLClient.request(query);
 		const id = res.folder.length == 0 ? 0 : res.folder[0].id;
 
-		newArgsFile = {
+		newArgs = {
 			where: {
 				_and: [
 					{ folderId: { _eq: id } },
-					{ deletedInRootUserFolderId: { _isNull: true } },
-				],
-			},
-		};
-		newArgsFolder = {
-			where: {
-				_and: [
-					{ parentFolderId: { _eq: id } },
 					{ deletedInRootUserFolderId: { _isNull: true } },
 				],
 			},
@@ -128,18 +120,10 @@ const subscriptionClient = async ({ subscriptionOf, args, token }) => {
 
 		if (authorized) {
 			// subscribe to folders, where args is the folderId
-			newArgsFile = {
+			newArgs = {
 				where: {
 					_and: [
 						{ folderId: { _eq: args } },
-						{ deletedInRootUserFolderId: { _isNull: true } },
-					],
-				},
-			};
-			newArgsFolder = {
-				where: {
-					_and: [
-						{ parentFolderId: { _eq: args } },
 						{ deletedInRootUserFolderId: { _isNull: true } },
 					],
 				},
@@ -155,30 +139,10 @@ const subscriptionClient = async ({ subscriptionOf, args, token }) => {
 		}
 	}
 
-	if (subscriptionOf == 'File') {
-		SUBSCRIBE_QUERY = gql`
+	const subscribeQuery = (__typename) => {
+		return gql`
 			subscription {
-				file(${objectToGraphqlArgs(newArgs ? newArgs : newArgsFile)}) {
-					id
-					name
-					size
-					meta {
-						modified
-						created
-						lastAccessed
-						sharingPermission {
-							sharingPermissionLinks {
-								link
-							}
-						}
-					}
-				}
-			}
-		`;
-	} else if (subscriptionOf == 'Folder') {
-		SUBSCRIBE_QUERY = gql`
-			subscription {
-				folder(${objectToGraphqlArgs(newArgs ? newArgs : newArgsFolder)}) {
+				${__typename}(${objectToGraphqlArgs(newArgs ? newArgs : newArgsFolder)}) {
 					id
 					name
 					meta {
@@ -194,8 +158,12 @@ const subscriptionClient = async ({ subscriptionOf, args, token }) => {
 				}
 			}
 		`;
-	}
-	return createSubscriptionObservable(GRAPHQL_ENDPOINT_WS, SUBSCRIBE_QUERY);
+	};
+
+	return createSubscriptionObservable(
+		GRAPHQL_ENDPOINT_WS,
+		subscribeQuery(__typename)
+	);
 };
 
 export const webSocket = (server) => {
@@ -206,21 +174,21 @@ export const webSocket = (server) => {
 		let consumers = [];
 		socket.on('message', async (_data) => {
 			const data = JSON.parse(_data);
-			const { subscriptionOf, id } = data;
-			// console.log({ subscriptionOf, args, id });
+			const { __typename, id } = data;
+			// console.log({ __typename, args, id });
 
 			// add to list of consumers, so the most recent consumer will be what is returning a result to the frontend
 			// stale queries wont conflict with new queries
 			consumers.unshift({
 				id,
-				subscriptionOf,
+				__typename,
 			});
 			const subscription = (await subscriptionClient({ ...data })).subscribe(
 				(eventData) => {
 					// Do something on receipt of the event, if it is the most recent subscription of subscription of
 
 					const mostRecent = consumers.find(
-						(consumer) => consumer.subscriptionOf == subscriptionOf
+						(consumer) => consumer.__typename == __typename
 					);
 					if (mostRecent.id == id) {
 						socket.send(JSON.stringify({ status: 200, data: eventData.data }));
@@ -237,10 +205,10 @@ export const webSocket = (server) => {
 			if (consumer) consumer.subscription = subscription;
 
 			const mostRecentFile = consumers.find(
-				(consumer) => consumer.subscriptionOf == 'File'
+				(consumer) => consumer.__typename == 'file'
 			);
 			const mostRecentFolder = consumers.find(
-				(consumer) => consumer.subscriptionOf == 'Folder'
+				(consumer) => consumer.__typename == 'folder'
 			);
 
 			const toRemove = consumers.filter(

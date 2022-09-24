@@ -8,7 +8,7 @@ const getSharingLinks = async (req, res) => {
 	const userId = getUserId({ req });
 	let response;
 
-	if (__typename == 'Folder') {
+	if (__typename == 'folder') {
 		const queryArgs = {
 			id,
 		};

@@ -84,7 +84,7 @@ const upload = async (req, res) => {
 
 				const mutationArguments = {
 					name,
-					parentFolderId,
+					folderId: parentFolderId,
 					meta: genericMeta({ userId }),
 				};
 				const mutation = gql`

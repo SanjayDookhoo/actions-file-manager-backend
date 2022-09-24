@@ -3,7 +3,7 @@ import { genericMeta, getUserId } from '../utils';
 import { objectToGraphqlArgs, objectToGraphqlMutationArgs } from 'hasura-args';
 import { gql } from 'graphql-request';
 
-//create root folder for each user, to prevent the need to deal with null as a parentFolderId or folderId
+//create root folder for each user, to prevent the need to deal with null as a folderId or folderId
 const getRootUserFolder = async (req, res) => {
 	const userId = getUserId({ req });
 	let response;
@@ -11,7 +11,7 @@ const getRootUserFolder = async (req, res) => {
 	const queryArgs = {
 		where: {
 			_and: [
-				{ parentFolderId: { _isNull: true } },
+				{ folderId: { _isNull: true } },
 				{
 					meta: {
 						userId: { _eq: userId },

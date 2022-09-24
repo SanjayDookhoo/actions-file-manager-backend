@@ -1,5 +1,5 @@
 import { clipboard } from '..';
-import { genericMeta, getUserId } from '../utils';
+import { capitalizeFirstLetter, genericMeta, getUserId } from '../utils';
 import { v4 as uuidv4 } from 'uuid';
 import { GraphQLClient, gql } from 'graphql-request';
 import { graphQLClient } from '../endpoint.js';
@@ -17,51 +17,43 @@ const paste = async (req, res) => {
 	if (type == 'cut') {
 		delete clipboard[userId];
 
-		let args, mutation, response;
+		let args, response;
 
 		args = {
 			where: {
 				id: { _in: selectedFolders },
 			},
 			_set: {
-				parentFolderId: folderId,
+				folderId,
 			},
 		};
-		mutation = gql`
-			mutation {
-				updateFolder(${objectToGraphqlArgs(args)}) {
-					returning {
-						id
-						meta {
+
+		const mutation = (__typename) => {
+			return gql`
+				mutation {
+					update${capitalizeFirstLetter(__typename)}(${objectToGraphqlArgs(args)}) {
+						returning {
 							id
+							meta {
+								id
+							}
 						}
 					}
 				}
-			}
-		`;
-		response = await graphQLClient.request(mutation);
+			`;
+		};
+
+		response = await graphQLClient.request(mutation('folder'));
 
 		args = {
 			where: {
 				id: { _in: selectedFiles },
 			},
 			_set: {
-				folderId: folderId,
+				folderId,
 			},
 		};
-		mutation = gql`
-			mutation {
-				updateFile(${objectToGraphqlArgs(args)}) {
-					returning {
-						id
-						meta {
-							id
-						}
-					}
-				}
-			}
-		`;
-		response = await graphQLClient.request(mutation);
+		response = await graphQLClient.request(mutation('file'));
 	} else {
 		// copy selected folders
 
@@ -85,7 +77,7 @@ const paste = async (req, res) => {
 		for (const folder of graphqlResponse.folder) {
 			const { id } = await copyFolder({
 				folder,
-				parentFolderId: folderId,
+				folderId,
 				userId,
 			});
 
@@ -173,13 +165,13 @@ const copyFiles = async ({ files, folderId, userId }) => {
 	await graphQLClient.request(mutation);
 };
 
-const copyFolder = async ({ folder, parentFolderId, userId }) => {
+const copyFolder = async ({ folder, folderId, userId }) => {
 	const { name } = folder;
 
 	// create new file records for the database
 	const data = {
 		name,
-		parentFolderId,
+		folderId,
 		meta: genericMeta({ userId }),
 	};
 
@@ -206,7 +198,7 @@ const recursiveFolderCopy = async ({
 	const nestedFolderQueryArguments = {
 		where: {
 			_and: [
-				{ parentFolderId: { _eq: folderIdToCopy } },
+				{ folderId: { _eq: folderIdToCopy } },
 				{ deletedInRootUserFolderId: { _isNull: true } },
 			],
 		},
@@ -224,7 +216,7 @@ const recursiveFolderCopy = async ({
 		// copy these folders in the database
 		const { id } = await copyFolder({
 			folder,
-			parentFolderId: folderIdToCreateIn,
+			folderId: folderIdToCreateIn,
 			userId,
 		});
 

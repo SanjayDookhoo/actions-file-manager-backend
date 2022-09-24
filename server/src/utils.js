@@ -29,3 +29,7 @@ export const getUserId = ({ req, token }) => {
 };
 
 export const update = _update; // does not allow vs code importing because it is not a named export, this makes it easier
+
+export const capitalizeFirstLetter = (string) => {
+	return string.charAt(0).toUpperCase() + string.slice(1);
+};

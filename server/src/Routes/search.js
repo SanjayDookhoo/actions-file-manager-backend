@@ -18,10 +18,7 @@ const search = async (req, res) => {
 		// search all nested folders
 		const nestedFolderQueryArguments = {
 			where: {
-				_and: [
-					{ parentFolderId: folderId ? { _eq: folderId } : { _isNull: true } },
-					{ meta: { userId: folderId ? { _isNull: false } : { _eq: userId } } }, // if folderId, only show records the user owns in parent root directory, else show all
-				],
+				folderId: { _eq: folderId },
 			},
 		};
 		const nestedFolderQuery = gql`
@@ -58,60 +55,47 @@ const search = async (req, res) => {
 			orCondition.push({ name: { _ilike: `% ${search}%` } });
 		});
 
-		// all folders that match the search query
-		const folderQueryArguments = {
+		const queryArgs = {
 			where: {
 				_and: {
 					_or: orCondition,
-					parentFolderId: folderId ? { _eq: folderId } : { _isNull: true },
+					folderId: { _eq: folderId },
 				},
 			},
 		};
-		const folderQuery = gql`
-            query {
-                folder(${objectToGraphqlArgs(folderQueryArguments)}) {
-                    id
-                    name
-                }
-            }
-        `;
 
-		graphqlResponse = await graphQLClient.request(folderQuery);
+		const query = (__typename) => {
+			return gql`
+				query {
+					${__typename}(${objectToGraphqlArgs(queryArgs)}) {
+						id
+						name
+					}
+				}
+			`;
+		};
+
+		// all folders that match the search query
+		graphqlResponse = await graphQLClient.request(query('folder'));
 		searchResponse = [
 			...searchResponse,
 			...graphqlResponse.folder.map((folder) => ({
 				...folder,
 				relativePath,
 				relativePathName,
-				__typename: 'Folder',
+				__typename: 'folder',
 			})),
 		];
 
 		// all files that match the search query
-		const fileQueryArguments = {
-			where: {
-				_and: {
-					_or: orCondition,
-					folderId: folderId ? { _eq: folderId } : { _isNull: true },
-				},
-			},
-		};
-		const fileQuery = gql`
-            query {
-                file(${objectToGraphqlArgs(fileQueryArguments)}) {
-                    id
-                    name
-                }
-            }
-        `;
-		graphqlResponse = await graphQLClient.request(fileQuery);
+		graphqlResponse = await graphQLClient.request(query('file'));
 		searchResponse = [
 			...searchResponse,
 			...graphqlResponse.file.map((file) => ({
 				...file,
 				relativePath,
 				relativePathName,
-				__typename: 'File',
+				__typename: 'file',
 			})),
 		];
 

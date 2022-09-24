@@ -5,11 +5,11 @@ import { gql } from 'graphql-request';
 
 // because the newFolder has some meta assigned to it, it will be better to handle the entire folder creation on the backend
 const createNewFolder = async (req, res) => {
-	const { name, parentFolderId } = req.body;
+	const { name, folderId } = req.body;
 
 	const mutationArguments = {
 		name,
-		parentFolderId,
+		folderId,
 		meta: genericMeta({ req }),
 	};
 

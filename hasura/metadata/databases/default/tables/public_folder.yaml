@@ -7,12 +7,12 @@ object_relationships:
       foreign_key_constraint_on: meta_id
   - name: parentFolder
     using:
-      foreign_key_constraint_on: parent_folder_id
+      foreign_key_constraint_on: folder_id
 array_relationships:
   - name: childrenFolders
     using:
       foreign_key_constraint_on:
-        column: parent_folder_id
+        column: folder_id
         table:
           name: folder
           schema: public
