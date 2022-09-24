@@ -6,7 +6,7 @@ import { SubscriptionClient } from 'subscriptions-transport-ws';
 import gql from 'graphql-tag';
 import { objectToGraphqlArgs } from 'hasura-args';
 import { graphQLClient } from './endpoint';
-import { getUserId } from './utils';
+import { getRootFolderArgsAndAccessType, getUserId } from './utils';
 import { userAccessTypeCheck } from './userCheck';
 
 const { GRAPHQL_ENDPOINT_WS } = process.env;
@@ -33,126 +33,18 @@ const createSubscriptionObservable = (wsurl, query, variables) => {
 	return execute(link, { query: query, variables: variables });
 };
 
-const subscriptionClient = async ({ __typename, args, token }) => {
+const subscriptionClient = async ({ __typename, folderId, token }) => {
 	const userId = getUserId({ token });
-	let SUBSCRIBE_QUERY;
-	let newArgs;
-	let newArgsFile, newArgsFolder;
-	let authorizedToEdit, authorizedToView;
-	if (args == 'Home') {
-		const otherArgs = {
-			where: {
-				_and: [
-					{ folderId: { _isNull: true } },
-					{
-						meta: {
-							userId: { _eq: userId },
-						},
-					},
-				],
-			},
-		};
-		const query = gql`
-            query {
-                folder(${objectToGraphqlArgs(otherArgs)}) {
-                    id
-                }
-            }
-        `;
-		const res = await graphQLClient.request(query);
-		const id = res.folder.length == 0 ? 0 : res.folder[0].id;
 
-		newArgs = {
-			where: {
-				_and: [
-					{ folderId: { _eq: id } },
-					{ deletedInRootUserFolderId: { _isNull: true } },
-				],
-			},
-		};
-	} else if (args == 'Shared with me') {
-		const otherArgs = {
-			where: { userId: { _eq: userId } },
-		};
-		const query = gql`
-            query {
-                sharedWithMe(${objectToGraphqlArgs(otherArgs)}) {
-                    collection
-                }
-            }
-        `;
-
-		const res = await graphQLClient.request(query);
-
-		let _in;
-		if (res.sharedWithMe.length != 0) {
-			_in = JSON.parse(res.sharedWithMe[0].collection);
-		} else {
-			_in = [];
-		}
-
-		newArgs = {
-			where: {
-				_and: [
-					{
-						meta: {
-							sharingPermission: {
-								sharingPermissionLinks: { link: { _in } },
-							},
-						},
-					},
-					{ deletedInRootUserFolderId: { _isNull: true } },
-				],
-			},
-		};
-	} else if (args == 'Recycle bin') {
-		newArgs = {
-			where: {
-				deletedInRootUserFolderId: { _eq: userId },
-			},
-		};
-	} else {
-		authorizedToEdit = await userAccessTypeCheck({
-			userId,
-			selectedFolders: [args],
-			selectedFiles: [],
-			accessType: 'EDIT',
-		});
-
-		if (!authorizedToEdit) {
-			authorizedToView = await userAccessTypeCheck({
-				userId,
-				selectedFolders: [args],
-				selectedFiles: [],
-				accessType: 'VIEW',
-			});
-		}
-
-		if (authorizedToEdit || authorizedToView) {
-			// subscribe to folders, where args is the folderId
-			newArgs = {
-				where: {
-					_and: [
-						{ folderId: { _eq: args } },
-						{ deletedInRootUserFolderId: { _isNull: true } },
-					],
-				},
-			};
-		} else {
-			// this condition will never be met, so nothing would show if they are not authorized
-			// TODO, return an error instead
-			newArgs = {
-				where: {
-					folderId: { _isNull: true },
-				},
-			};
-		}
-	}
+	const { args, accessType } = await getRootFolderArgsAndAccessType({
+		folderId,
+		userId,
+	});
 
 	const subscribeQuery = (__typename) => {
 		return gql`
 			subscription {
-				${__typename}(${objectToGraphqlArgs(newArgs)}) {
+				${__typename}(${objectToGraphqlArgs(args)}) {
 					id
 					name
 					meta {
@@ -170,10 +62,6 @@ const subscriptionClient = async ({ __typename, args, token }) => {
 		`;
 	};
 
-	let accessType = null;
-	if (authorizedToEdit) accessType = 'EDIT';
-	else if (authorizedToView) accessType = 'VIEW';
-
 	return {
 		subscriptionObservable: createSubscriptionObservable(
 			GRAPHQL_ENDPOINT_WS,
@@ -181,10 +69,6 @@ const subscriptionClient = async ({ __typename, args, token }) => {
 		),
 		accessType,
 	};
-	// return createSubscriptionObservable(
-	// 	GRAPHQL_ENDPOINT_WS,
-	// 	subscribeQuery(__typename)
-	// );
 };
 
 export const webSocket = (server) => {

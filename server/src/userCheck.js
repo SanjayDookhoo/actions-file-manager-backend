@@ -62,7 +62,9 @@ export const userViewCheck = async (req, res, next) => {
 		selectedFiles = req.body.selectedFiles;
 	} else if (req.url == '/search') {
 		const { folderId } = req.body;
-		selectedFolders = [folderId];
+		if (Number.isInteger(folderId)) {
+			selectedFolders = [folderId];
+		}
 	}
 
 	await userAccessTypeCheck({
