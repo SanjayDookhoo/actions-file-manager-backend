@@ -51,12 +51,8 @@ const subscriptionClient = async ({ __typename, folderId, token }) => {
 						modified
 						created
 						lastAccessed
-						sharingPermission {
-							sharingPermissionLinks {
-								link
-							}
-						}
 					}
+					${__typename == 'file' ? 'size' : ''}
 				}
 			}
 		`;
