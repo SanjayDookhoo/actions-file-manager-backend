@@ -111,7 +111,7 @@ export const getRootFolderArgsAndAccessType = async ({ folderId, userId }) => {
 	} else if (folderId == 'Recycle bin') {
 		args = {
 			where: {
-				deletedInRootUserFolderId: { _eq: userId },
+				_and: [{ deletedInRootUserFolderId: { _eq: userId } }],
 			},
 		};
 	} else {
