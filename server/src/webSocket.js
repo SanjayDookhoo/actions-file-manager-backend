@@ -41,6 +41,12 @@ const subscriptionClient = async ({ __typename, folderId, token }) => {
 		userId,
 	});
 
+	// if a folderId that is a integer is passed in, an actual folderId, accessType will always have a value
+	// use this condition to know if to update a folders lastAccessed
+	if (accessType) {
+		await updateFolderLastAccessed(folderId);
+	}
+
 	const subscribeQuery = (__typename) => {
 		return gql`
 			subscription {
@@ -65,6 +71,37 @@ const subscriptionClient = async ({ __typename, folderId, token }) => {
 		),
 		accessType,
 	};
+};
+
+const updateFolderLastAccessed = async (id) => {
+	// get link
+	const queryArgs = {
+		id,
+	};
+	const query = gql`
+		query {
+			folderByPk(${objectToGraphqlArgs(queryArgs)}) {
+				metaId
+			}
+		}
+	`;
+	const response = await graphQLClient.request(query);
+
+	// update lastAccessed
+	const mutationArgs = {
+		where: {
+			id: { _eq: response.folderByPk.metaId },
+		},
+		_set: { lastAccessed: 'now()' },
+	};
+	const mutation = gql`
+		mutation {
+			updateMeta(${objectToGraphqlArgs(mutationArgs)}) {
+				affected_rows
+			}
+		}
+	`;
+	await graphQLClient.request(mutation);
 };
 
 export const webSocket = (server) => {

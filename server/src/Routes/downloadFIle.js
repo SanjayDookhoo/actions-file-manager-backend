@@ -7,20 +7,38 @@ import { gql } from 'graphql-request';
 const downloadFIle = async (req, res) => {
 	const { id } = req.body;
 
+	// get link
 	const queryArgs = {
 		id,
 	};
 	const query = gql`
 		query {
 			fileByPk(${objectToGraphqlArgs(queryArgs)}) {
+				metaId
 				fileLink {
 					URL
 				}
 			}
 		}
 	`;
-
 	const response = await graphQLClient.request(query);
+
+	// update lastAccessed
+	const mutationArgs = {
+		where: {
+			id: { _eq: response.fileByPk.metaId },
+		},
+		_set: { lastAccessed: 'now()' },
+	};
+	const mutation = gql`
+		mutation {
+			updateMeta(${objectToGraphqlArgs(mutationArgs)}) {
+				affected_rows
+			}
+		}
+	`;
+	await graphQLClient.request(mutation);
+
 	res.json(response.fileByPk.fileLink);
 };
 
