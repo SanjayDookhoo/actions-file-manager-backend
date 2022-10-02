@@ -90,11 +90,11 @@ export const ownerCheck = async (req, res, next) => {
 		if (__typename == 'folder') selectedFolders = [id];
 		else selectedFiles = [id];
 	} else if (req.url == '/permanentlyDelete') {
-		selectedFolders = req.body.selectedFolders;
-		selectedFiles = req.body.selectedFiles;
+		selectedFolders = req.body.selectedFolders ?? [];
+		selectedFiles = req.body.selectedFiles ?? [];
 	} else if (req.url == '/restore') {
-		selectedFolders = req.body.selectedFolders;
-		selectedFiles = req.body.selectedFiles;
+		selectedFolders = req.body.selectedFolders ?? [];
+		selectedFiles = req.body.selectedFiles ?? [];
 	}
 
 	await userAccessTypeCheck({
