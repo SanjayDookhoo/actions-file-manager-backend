@@ -102,7 +102,7 @@ const getRootUserFolderId = async ({ id, __typename }) => {
 		// fetch parent data
 		const queryArgs = {
 			where: {
-				id: { _eq: id },
+				id: { _eq: folderId },
 			},
 		};
 		const query = gql`
