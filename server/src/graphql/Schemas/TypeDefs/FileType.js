@@ -5,6 +5,7 @@ const FileType = new GraphQLObjectType({
 	name: 'FileLink',
 	fields: () => ({
 		URL: { type: GraphQLString },
+		thumbnailURL: { type: GraphQLString },
 	}),
 });
 

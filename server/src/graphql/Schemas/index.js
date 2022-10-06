@@ -23,16 +23,31 @@ const RootQuery = new GraphQLObjectType({
 			resolve(parent, args) {
 				const { storedName, name } = args;
 				const Expires = 60 * 5 * 1000; // in seconds
-				const ResponseContentDisposition = `attachment; filename="${name}"`;
 				const URL = s3.getSignedUrl('getObject', {
 					Bucket: S3_BUCKET,
 					Key: storedName,
 					Expires,
-					ResponseContentDisposition,
+					ResponseContentDisposition: `attachment; filename="${name}"`,
+				});
+
+				const storedNameSplit = storedName.split('.');
+				const ext = storedNameSplit.pop();
+				const thumbnailStoredName =
+					storedNameSplit.join('.') + '_thumbnail.' + ext;
+
+				const nameSplit = name.split('.');
+				nameSplit.pop();
+				const thumbnailName = nameSplit.join('.') + '_thumbnail.' + ext;
+				const thumbnailURL = s3.getSignedUrl('getObject', {
+					Bucket: S3_BUCKET,
+					Key: thumbnailStoredName,
+					Expires,
+					ResponseContentDisposition: `attachment; filename="${thumbnailName}"`,
 				});
 
 				return {
 					URL,
+					thumbnailURL,
 				};
 			},
 		},

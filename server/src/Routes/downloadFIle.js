@@ -17,6 +17,7 @@ const downloadFIle = async (req, res) => {
 				metaId
 				fileLink {
 					URL
+					thumbnailURL
 				}
 			}
 		}
