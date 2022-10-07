@@ -24,12 +24,23 @@ import refreshSharingLink from './Routes/refreshSharingLink.js';
 import { overrideConsole } from 'nodejs-better-console';
 import { ownerCheck, userEditCheck, userViewCheck } from './userCheck.js';
 import getRootUserFolder from './Routes/getRootUserFolder.js';
+import 'express-async-errors'; // allows for a global level try catch https://stackoverflow.com/a/57527735/4224964
 
 overrideConsole();
 
 const { PORT } = process.env;
 
 export const clipboard = {};
+
+export const errorHandler = (err, req, res, next) => {
+	const errors = err?.response?.errors;
+	if (errors) {
+		// if this is valid, then it is an error with hasura
+		res.status(400).json({ errors });
+	} else {
+		res.status(500).json({ error: 'Unknown server error' });
+	}
+};
 
 const app = express();
 const server = http.createServer(app);
@@ -65,6 +76,8 @@ app.post('/getRootUserFolder', getRootUserFolder);
 
 // shouldnt need a check
 app.post('/addSharedWithMe', addSharedWithMe);
+
+app.use(errorHandler);
 
 server.listen(PORT, () => {
 	console.log(`Example app listening at http://localhost:${PORT}`);
