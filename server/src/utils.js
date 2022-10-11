@@ -158,3 +158,9 @@ export const getRootFolderArgsAndAccessType = async ({ folderId, userId }) => {
 
 	return { args, accessType };
 };
+
+export const thumbnailName = (name) => {
+	const nameSplit = name.split('.');
+	const ext = nameSplit.pop();
+	return nameSplit.join('.') + '_thumbnail.' + ext;
+};

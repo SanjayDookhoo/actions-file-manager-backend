@@ -1,4 +1,5 @@
 import s3 from '../s3.js';
+import { thumbnailName } from '../utils.js';
 const { S3_BUCKET, SECRET_HEADER } = process.env;
 
 // testing
@@ -17,12 +18,9 @@ const permanentlyDeleteFile = async (req, res) => {
 	};
 	await s3.deleteObject(params, () => {});
 
-	const storedNameSplit = storedName.split('.');
-	const ext = storedNameSplit.pop();
-	const thumbnailStoredName = storedNameSplit.join('.') + '_thumbnail.' + ext;
 	params = {
 		Bucket: S3_BUCKET,
-		Key: `${thumbnailStoredName}`,
+		Key: `${thumbnailName(storedName)}`,
 	};
 	await s3.deleteObject(params, () => {});
 

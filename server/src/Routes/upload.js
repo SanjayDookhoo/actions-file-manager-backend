@@ -45,11 +45,11 @@ const upload = async (req, res) => {
 	let fileMeta = [];
 	const userId = getUserId({ req });
 
-	busboy.on('file', (fieldname, file, name, encoding, mimetype) => {
+	busboy.on('file', (fieldName, file, name, encoding, mimeType) => {
 		const ext = name.split('.').pop();
 		const uuid = uuidv4();
 
-		if (mimetype.startsWith('image/')) {
+		if (mimeType.startsWith('image/')) {
 			// https://stackoverflow.com/questions/31807073/node-busboy-get-file-size
 			// gets total file size of stream
 			var m = meter();
@@ -69,6 +69,7 @@ const upload = async (req, res) => {
 					fileMeta.push({
 						size: m.bytes,
 						name,
+						mimeType,
 					});
 				});
 		} else {
@@ -82,6 +83,7 @@ const upload = async (req, res) => {
 					fileMeta.push({
 						size: m.bytes,
 						name,
+						mimeType,
 					});
 				});
 		}
@@ -145,13 +147,14 @@ const upload = async (req, res) => {
 
 				fileWrites.forEach((file, i) => {
 					const { Key } = file;
-					const { name, size } = fileMeta[i];
+					const { name, size, mimeType } = fileMeta[i];
 					const filePath = filesPath[i];
 
 					const data = {
 						name,
 						storedName: Key,
 						size,
+						mimeType,
 						folderId: filesPathMapToFolderId[filePath]
 							? filesPathMapToFolderId[filePath]
 							: folderId,

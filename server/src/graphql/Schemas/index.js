@@ -1,5 +1,6 @@
 import graphql from 'graphql';
 import s3 from '../../s3.js';
+import { thumbnailName } from '../../utils.js';
 import FileType from './TypeDefs/FileType.js';
 
 const {
@@ -30,19 +31,13 @@ const RootQuery = new GraphQLObjectType({
 					ResponseContentDisposition: `attachment; filename="${name}"`,
 				});
 
-				const storedNameSplit = storedName.split('.');
-				const ext = storedNameSplit.pop();
-				const thumbnailStoredName =
-					storedNameSplit.join('.') + '_thumbnail.' + ext;
-
-				const nameSplit = name.split('.');
-				nameSplit.pop();
-				const thumbnailName = nameSplit.join('.') + '_thumbnail.' + ext;
 				const thumbnailURL = s3.getSignedUrl('getObject', {
 					Bucket: S3_BUCKET,
-					Key: thumbnailStoredName,
+					Key: thumbnailName(storedName),
 					Expires,
-					ResponseContentDisposition: `attachment; filename="${thumbnailName}"`,
+					ResponseContentDisposition: `attachment; filename="${thumbnailName(
+						name
+					)}"`,
 				});
 
 				return {

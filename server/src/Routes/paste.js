@@ -1,5 +1,10 @@
 import { clipboard } from '..';
-import { capitalizeFirstLetter, genericMeta, getUserId } from '../utils';
+import {
+	capitalizeFirstLetter,
+	genericMeta,
+	getUserId,
+	thumbnailName,
+} from '../utils';
 import { v4 as uuidv4 } from 'uuid';
 import { GraphQLClient, gql } from 'graphql-request';
 import { graphQLClient } from '../endpoint.js';
@@ -111,6 +116,7 @@ const paste = async (req, res) => {
 					name
 					storedName
 					size
+					mimeType
 				}
 			}
 		`;
@@ -126,7 +132,8 @@ export default paste;
 const copyFiles = async ({ files, folderId, userId }) => {
 	const args = [];
 	files.forEach((file) => {
-		const { name, size, storedName } = file;
+		const { storedName, ...fileFields } = file;
+		let params;
 
 		const storedNameSplit = storedName.split('.');
 		const newStoredName = `${uuidv4()}.${
@@ -134,12 +141,20 @@ const copyFiles = async ({ files, folderId, userId }) => {
 		}`;
 
 		// copy files in s3
-		const params = {
+		params = {
 			Bucket: S3_BUCKET,
 			CopySource: `/${S3_BUCKET}/${storedName}`,
 			Key: newStoredName,
 		};
-
+		s3.copyObject(params, function (err, data) {
+			// if (err) console.log(err, err.stack); // an error occurred
+			// else console.log(data); // successful response
+		});
+		params = {
+			Bucket: S3_BUCKET,
+			CopySource: `/${S3_BUCKET}/${storedName}`,
+			Key: thumbnailName(newStoredName),
+		};
 		s3.copyObject(params, function (err, data) {
 			// if (err) console.log(err, err.stack); // an error occurred
 			// else console.log(data); // successful response
@@ -147,9 +162,8 @@ const copyFiles = async ({ files, folderId, userId }) => {
 
 		// create new file records for the database
 		const data = {
-			name,
+			...fileFields,
 			storedName: newStoredName,
-			size,
 			folderId,
 			meta: genericMeta({ userId }),
 		};
@@ -248,6 +262,7 @@ const recursiveFolderCopy = async ({
 				name
 				storedName
 				size
+				mimeType
 			}
 		}
 	`;
