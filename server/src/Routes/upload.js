@@ -9,6 +9,7 @@ import { graphQLClient } from '../endpoint.js';
 import { genericMeta, getUserId } from '../utils';
 import util from 'util';
 import sharp from 'sharp';
+import { errorHandler } from '../index.js';
 
 const { GRAPHQL_ENDPOINT, S3_BUCKET } = process.env;
 
@@ -45,136 +46,150 @@ const upload = async (req, res) => {
 	let fileMeta = [];
 	const userId = getUserId({ req });
 
-	busboy.on('file', (fieldName, file, name, encoding, mimeType) => {
-		const ext = name.split('.').pop();
-		const uuid = uuidv4();
-
-		if (mimeType.startsWith('image/')) {
-			// https://stackoverflow.com/questions/31807073/node-busboy-get-file-size
-			// gets total file size of stream
-			var m = meter();
-			file
-				.pipe(m)
-				.pipe(uploadFromStream({ ext, uuid, pending: pendingFileWrites }))
-				.pipe(resizeStream)
-				.pipe(
-					uploadFromStream({
-						ext,
-						uuid,
-						pending: pendingThumbnailFileWrites,
-						thumbnail: true,
-					})
-				)
-				.on('finish', function () {
-					fileMeta.push({
-						size: m.bytes,
-						name,
-						mimeType,
-					});
-				});
-		} else {
-			// https://stackoverflow.com/questions/31807073/node-busboy-get-file-size
-			// gets total file size of stream
-			var m = meter();
-			file
-				.pipe(m)
-				.pipe(uploadFromStream({ ext, uuid, pending: pendingFileWrites }))
-				.on('finish', function () {
-					fileMeta.push({
-						size: m.bytes,
-						name,
-						mimeType,
-					});
-				});
+	const tryCatch = async (tryer) => {
+		try {
+			await tryer();
+		} catch (err) {
+			errorHandler(err, req, res);
 		}
+	};
+
+	busboy.on('file', (fieldName, file, name, encoding, mimeType) => {
+		tryCatch(() => {
+			const ext = name.split('.').pop();
+			const uuid = uuidv4();
+
+			if (mimeType.startsWith('image/')) {
+				// https://stackoverflow.com/questions/31807073/node-busboy-get-file-size
+				// gets total file size of stream
+				var m = meter();
+				file
+					.pipe(m)
+					.pipe(uploadFromStream({ ext, uuid, pending: pendingFileWrites }))
+					.pipe(resizeStream)
+					.pipe(
+						uploadFromStream({
+							ext,
+							uuid,
+							pending: pendingThumbnailFileWrites,
+							thumbnail: true,
+						})
+					)
+					.on('finish', function () {
+						fileMeta.push({
+							size: m.bytes,
+							name,
+							mimeType,
+						});
+					});
+			} else {
+				// https://stackoverflow.com/questions/31807073/node-busboy-get-file-size
+				// gets total file size of stream
+				var m = meter();
+				file
+					.pipe(m)
+					.pipe(uploadFromStream({ ext, uuid, pending: pendingFileWrites }))
+					.on('finish', function () {
+						fileMeta.push({
+							size: m.bytes,
+							name,
+							mimeType,
+						});
+					});
+			}
+		});
 	});
 
 	busboy.on('field', (field, val) => {
-		if (field == 'filesPath') {
-			filesPath = JSON.parse(val);
-		}
+		tryCatch(() => {
+			if (field == 'filesPath') {
+				filesPath = JSON.parse(val);
+			}
+		});
 	});
 
 	// issues arise if the res.json is called above multiple times
 	busboy.on('finish', () => {
 		Promise.all(pendingThumbnailFileWrites).then((_) => {
-			Promise.all(pendingFileWrites).then(async (fileWrites) => {
-				const mutationArguments = [];
-				const filesPathSet = [...new Set(filesPath)];
-				const filesPathMapToFolderId = {};
+			Promise.all(pendingFileWrites).then((fileWrites) => {
+				tryCatch(async () => {
+					const mutationArguments = [];
+					const filesPathSet = [...new Set(filesPath)];
+					const filesPathMapToFolderId = {};
 
-				const _recursiveFolderCreation = async (fullPath) => {
-					if (!fullPath) return null;
-					if (filesPathMapToFolderId[fullPath])
-						return filesPathMapToFolderId[fullPath];
+					const _recursiveFolderCreation = async (fullPath) => {
+						if (!fullPath) return null;
+						if (filesPathMapToFolderId[fullPath])
+							return filesPathMapToFolderId[fullPath];
 
-					const split = fullPath.split('/');
-					const name = split[split.length - 1];
-					const path = split.slice(0, split.length - 1).join('/');
-					let parentFolderId = filesPathMapToFolderId[path];
-					if (!parentFolderId) {
-						await _recursiveFolderCreation(path);
-						parentFolderId = filesPathMapToFolderId[path];
-					}
-					// if still null
-					if (!parentFolderId) {
-						parentFolderId = folderId;
-					}
+						const split = fullPath.split('/');
+						const name = split[split.length - 1];
+						const path = split.slice(0, split.length - 1).join('/');
+						let parentFolderId = filesPathMapToFolderId[path];
+						if (!parentFolderId) {
+							await _recursiveFolderCreation(path);
+							parentFolderId = filesPathMapToFolderId[path];
+						}
+						// if still null
+						if (!parentFolderId) {
+							parentFolderId = folderId;
+						}
 
-					const mutationArguments = {
-						name,
-						folderId: parentFolderId,
-						meta: genericMeta({ userId }),
+						const mutationArguments = {
+							name,
+							folderId: parentFolderId,
+							meta: genericMeta({ userId }),
+						};
+						const mutation = gql`
+							mutation {
+								insertFolderOne(${objectToGraphqlMutationArgs(mutationArguments)}) {
+									id
+								}
+							}
+						`;
+
+						const response = await graphQLClient.request(mutation);
+						filesPathMapToFolderId[fullPath] = response.insertFolderOne.id;
 					};
+
+					// forEach does not work as intended, but this does,
+					// https://stackoverflow.com/a/37576787/4224964 (Reading in series)
+					// Reading in series chosen because the next folder creation may need the folder created before
+					for (const fullPath of filesPathSet) {
+						await _recursiveFolderCreation(fullPath);
+					}
+
+					fileWrites.forEach((file, i) => {
+						const { Key } = file;
+						const { name, size, mimeType } = fileMeta[i];
+						const filePath = filesPath[i];
+
+						const data = {
+							name,
+							storedName: Key,
+							size,
+							mimeType,
+							folderId: filesPathMapToFolderId[filePath]
+								? filesPathMapToFolderId[filePath]
+								: folderId,
+							meta: genericMeta({ userId }),
+						};
+						mutationArguments.push(data);
+					});
+
 					const mutation = gql`
 						mutation {
-							insertFolderOne(${objectToGraphqlMutationArgs(mutationArguments)}) {
-								id
+							insertFile(${objectToGraphqlMutationArgs(mutationArguments)}) {
+								returning {
+									id
+								}
 							}
 						}
 					`;
 
-					const response = await graphQLClient.request(mutation);
-					filesPathMapToFolderId[fullPath] = response.insertFolderOne.id;
-				};
-
-				// forEach does not work as intended, but this does,
-				// https://stackoverflow.com/a/37576787/4224964 (Reading in series)
-				// Reading in series chosen because the next folder creation may need the folder created before
-				for (const fullPath of filesPathSet) {
-					await _recursiveFolderCreation(fullPath);
-				}
-
-				fileWrites.forEach((file, i) => {
-					const { Key } = file;
-					const { name, size, mimeType } = fileMeta[i];
-					const filePath = filesPath[i];
-
-					const data = {
-						name,
-						storedName: Key,
-						size,
-						mimeType,
-						folderId: filesPathMapToFolderId[filePath]
-							? filesPathMapToFolderId[filePath]
-							: folderId,
-						meta: genericMeta({ userId }),
-					};
-					mutationArguments.push(data);
+					const data = await graphQLClient.request(mutation);
+					res.json(data);
 				});
-
-				const mutation = gql`
-					mutation {
-						insertFile(${objectToGraphqlMutationArgs(mutationArguments)}) {
-							returning {
-								id
-							}
-						}
-					}
-				`;
-
-				const data = await graphQLClient.request(mutation);
-				res.json(data);
 			});
 		});
 	});
