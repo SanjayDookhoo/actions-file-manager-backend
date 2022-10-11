@@ -8,66 +8,34 @@ const getSharingLinks = async (req, res) => {
 	const userId = getUserId({ req });
 	let response;
 
-	if (__typename == 'folder') {
-		const queryArgs = {
-			id,
-		};
-		const query = gql`
-			query {
-				folderByPk(${objectToGraphqlArgs(queryArgs)}) {
-					name
-					meta {
-						userId
-						sharingPermission{
-							sharingPermissionLinks{
-								id
-								accessType
-								link
-							}
+	const queryArgs = {
+		id,
+	};
+	const query = gql`
+		query {
+			${__typename}ByPk(${objectToGraphqlArgs(queryArgs)}) {
+				name
+				meta {
+					userId
+					sharingPermission{
+						sharingPermissionLinks{
+							id
+							accessType
+							link
 						}
 					}
 				}
 			}
-		`;
-		response = await graphQLClient.request(query);
-		response = response.folderByPk;
-		if (response.meta.userId != userId) {
-			response = response.meta.sharingPermission.sharingPermissionLinks.filter(
-				(record) => record.accessType == 'VIEW'
-			);
-		} else {
-			response = response.meta.sharingPermission.sharingPermissionLinks;
 		}
+	`;
+	response = await graphQLClient.request(query);
+	response = response[`${__typename}ByPk`];
+	if (response.meta.userId != userId) {
+		response = response.meta.sharingPermission.sharingPermissionLinks.filter(
+			(record) => record.accessType == 'VIEW'
+		);
 	} else {
-		const queryArgs = {
-			id,
-		};
-		const query = gql`
-			query {
-				fileByPk(${objectToGraphqlArgs(queryArgs)}) {
-					name
-					meta {
-						userId
-						sharingPermission{
-							sharingPermissionLinks{
-								id
-								accessType
-								link
-							}
-						}
-					}
-				}
-			}
-		`;
-		response = await graphQLClient.request(query);
-		response = response.fileByPk;
-		if (response.meta.userId != userId) {
-			response = response.meta.sharingPermission.sharingPermissionLinks.filter(
-				(record) => record.accessType == 'VIEW'
-			);
-		} else {
-			response = response.meta.sharingPermission.sharingPermissionLinks;
-		}
+		response = response.meta.sharingPermission.sharingPermissionLinks;
 	}
 
 	res.json(response);

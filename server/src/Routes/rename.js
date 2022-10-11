@@ -1,5 +1,5 @@
 import { graphQLClient } from '../endpoint';
-import { genericMeta } from '../utils';
+import { capitalizeFirstLetter, genericMeta } from '../utils';
 import { objectToGraphqlArgs, objectToGraphqlMutationArgs } from 'hasura-args';
 import { gql } from 'graphql-request';
 
@@ -13,27 +13,15 @@ const rename = async (req, res) => {
 		_set: { name },
 	};
 
-	if (__typename == 'folder') {
-		mutation = gql`
-			mutation {
-				updateFolder(${objectToGraphqlArgs(args)}) {
-					returning {
-						id
-					}
+	mutation = gql`
+		mutation {
+			update${capitalizeFirstLetter(__typename)}(${objectToGraphqlArgs(args)}) {
+				returning {
+					id
 				}
 			}
-		`;
-	} else {
-		mutation = gql`
-			mutation {
-				updateFile(${objectToGraphqlArgs(args)}) {
-					returning {
-						id
-					}
-				}
-			}
-		`;
-	}
+		}
+	`;
 
 	const response = await graphQLClient.request(mutation);
 	res.json(response);
