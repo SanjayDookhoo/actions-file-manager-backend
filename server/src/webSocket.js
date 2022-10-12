@@ -58,7 +58,7 @@ const subscriptionClient = async ({ __typename, folderId, token }) => {
 						created
 						lastAccessed
 					}
-					${__typename == 'file' ? 'size' : ''}
+					${__typename == 'file' ? 'size, mimeType' : ''}
 				}
 			}
 		`;
