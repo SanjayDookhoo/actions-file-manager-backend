@@ -1,0 +1,1 @@
+ALTER TABLE folder ADD size BIGINT DEFAULT 0;

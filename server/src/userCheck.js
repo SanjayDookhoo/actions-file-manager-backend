@@ -148,7 +148,7 @@ const authorizedForAccessType = async ({
 }) => {
 	let response;
 
-	const _helper = async (record, __typename) => {
+	const _helper = async (record) => {
 		let isAuthorized = false;
 		if (accessType != 'OWNER') {
 			if (accessType == 'EDIT') {
@@ -218,12 +218,12 @@ const authorizedForAccessType = async ({
 	};
 
 	for (const folder of folders) {
-		const isAuthorized = await _helper(folder, 'folder');
+		const isAuthorized = await _helper(folder);
 		if (!isAuthorized) return false; // terminating condition
 	}
 
 	for (const file of files) {
-		const isAuthorized = await _helper(file, 'file');
+		const isAuthorized = await _helper(file);
 		if (!isAuthorized) return false; // terminating condition
 	}
 
@@ -289,22 +289,6 @@ const initialMetaFetch = async ({ selectedFolders, selectedFiles }) => {
 	const files = response.file;
 
 	return { folders, files };
-};
-
-// returns the "one owner userId" or false
-export const allByOneOwner = ({ folders, files }) => {
-	let allRecords = [];
-
-	allRecords = [...allRecords, ...folders.map((record) => record.meta.userId)];
-
-	allRecords = [...allRecords, ...files.map((record) => record.meta.userId)];
-
-	allRecords = [...new Set(allRecords)];
-	if (allRecords.length == 1) {
-		// all userId of the records are the same, and it is of the owner
-		return allRecords[0];
-	}
-	return false;
 };
 
 const getFolderFileIdFromSharingLink = async (id) => {

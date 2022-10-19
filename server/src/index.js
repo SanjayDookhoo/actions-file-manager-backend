@@ -38,6 +38,7 @@ export const errorHandler = (err, req, res, next) => {
 		// if this is valid, then it is an error with hasura
 		res.status(400).json({ errors });
 	} else {
+		console.log(err);
 		res.status(500).json({ error: 'Unknown server error' });
 	}
 };

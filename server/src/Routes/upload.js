@@ -6,7 +6,7 @@ import stream from 'stream';
 import s3 from '../s3.js';
 import { objectToGraphqlArgs, objectToGraphqlMutationArgs } from 'hasura-args';
 import { graphQLClient } from '../endpoint.js';
-import { genericMeta, getUserId } from '../utils';
+import { genericMeta, getUserId, folderSizesMutationUpdates } from '../utils';
 import util from 'util';
 import sharp from 'sharp';
 import { errorHandler } from '../index.js';
@@ -177,8 +177,23 @@ const upload = async (req, res) => {
 						mutationArguments.push(data);
 					});
 
+					const size = fileMeta.reduce(
+						(partialSum, meta) => partialSum + meta.size,
+						0
+					);
+					const folderSizesUpdates = await folderSizesMutationUpdates([
+						{
+							ids: [folderId],
+							inc: true,
+							size,
+						},
+					]);
+
 					const mutation = gql`
 						mutation {
+							updateFolderMany(${objectToGraphqlArgs({ updates: folderSizesUpdates })}) {
+								affected_rows
+							}
 							insertFile(${objectToGraphqlMutationArgs(mutationArguments)}) {
 								returning {
 									id

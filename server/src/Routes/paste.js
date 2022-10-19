@@ -2,8 +2,10 @@ import { clipboard } from '..';
 import {
 	capitalizeFirstLetter,
 	genericMeta,
+	getAllParentFolderIdsAndSize,
 	getUserId,
 	thumbnailName,
+	folderSizesMutationUpdates,
 } from '../utils';
 import { v4 as uuidv4 } from 'uuid';
 import { GraphQLClient, gql } from 'graphql-request';
@@ -29,7 +31,7 @@ const paste = async (req, res) => {
 
 		let args, response;
 
-		args = {
+		const folderArgs = {
 			where: {
 				id: { _in: selectedFolders },
 			},
@@ -38,10 +40,43 @@ const paste = async (req, res) => {
 			},
 		};
 
-		const mutation = (__typename) => {
-			return gql`
+		const fileArgs = {
+			where: {
+				id: { _in: selectedFiles },
+			},
+			_set: {
+				folderId,
+			},
+		};
+
+		const { ids, size } = await getAllParentFolderIdsAndSize({
+			selectedFolders,
+			selectedFiles,
+		});
+
+		const folderSizesUpdates = await folderSizesMutationUpdates([
+			{
+				ids: [folderId],
+				inc: true,
+				size,
+			},
+			{
+				ids,
+				inc: false,
+				size,
+			},
+		]);
+
+		const folderManyArgs = {
+			updates: [...folderSizesUpdates, folderArgs],
+		};
+
+		const mutation = gql`
 				mutation {
-					update${capitalizeFirstLetter(__typename)}(${objectToGraphqlArgs(args)}) {
+					updateFolderMany(${objectToGraphqlArgs(folderManyArgs)}) {
+						affected_rows
+					}
+					updateFile(${objectToGraphqlArgs(fileArgs)}) {
 						returning {
 							id
 							meta {
@@ -51,19 +86,8 @@ const paste = async (req, res) => {
 					}
 				}
 			`;
-		};
 
-		response = await graphQLClient.request(mutation('folder'));
-
-		args = {
-			where: {
-				id: { _in: selectedFiles },
-			},
-			_set: {
-				folderId,
-			},
-		};
-		response = await graphQLClient.request(mutation('file'));
+		response = await graphQLClient.request(mutation);
 	} else {
 		// copy selected folders
 
@@ -120,8 +144,19 @@ const paste = async (req, res) => {
 				}
 			}
 		`;
+
+		const _getAllParentFolderIdsAndSize = await getAllParentFolderIdsAndSize({
+			selectedFolders,
+			selectedFiles,
+		});
+
 		graphqlResponse = await graphQLClient.request(selectedFilesQuery);
-		copyFiles({ files: graphqlResponse.file, folderId, userId });
+		copyFiles({
+			files: graphqlResponse.file,
+			folderId,
+			userId,
+			_getAllParentFolderIdsAndSize,
+		});
 	}
 
 	res.status(200).json({ message: 'successfully pasted' });
@@ -129,7 +164,12 @@ const paste = async (req, res) => {
 
 export default paste;
 
-const copyFiles = async ({ files, folderId, userId }) => {
+const copyFiles = async ({
+	files,
+	folderId,
+	userId,
+	_getAllParentFolderIdsAndSize,
+}) => {
 	const args = [];
 	files.forEach((file) => {
 		const { storedName, ...fileFields } = file;
@@ -170,9 +210,22 @@ const copyFiles = async ({ files, folderId, userId }) => {
 		args.push(data);
 	});
 
+	const { ids, size } = _getAllParentFolderIdsAndSize;
+
+	const folderSizesUpdates = await folderSizesMutationUpdates([
+		{
+			ids: [folderId],
+			inc: true,
+			size,
+		},
+	]);
+
 	// finalize writing all files
 	const mutation = gql`
 		mutation {
+			updateFolderMany(${objectToGraphqlArgs({ updates: folderSizesUpdates })}) {
+				affected_rows
+			}
 			insertFile(${objectToGraphqlMutationArgs(args)}) {
 				returning {
 					id

@@ -32,6 +32,7 @@ const getRootUserFolder = async (req, res) => {
 	if (response.folder.length == 0) {
 		const mutationArguments = {
 			name: `${userId}_root_folder`,
+			trashSize: 0,
 			meta: genericMeta({ req }),
 		};
 		const mutation = gql`

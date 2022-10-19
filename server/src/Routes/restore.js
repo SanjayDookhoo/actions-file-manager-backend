@@ -1,7 +1,13 @@
 import { graphQLClient } from '../endpoint';
-import { genericMeta } from '../utils';
+import {
+	folderSizesMutationUpdates,
+	genericMeta,
+	getAllParentFolderIdsAndSize,
+	getRootFolder,
+} from '../utils';
 import { objectToGraphqlArgs, objectToGraphqlMutationArgs } from 'hasura-args';
 import { gql } from 'graphql-request';
+import getRootUserFolder from './getRootUserFolder';
 
 const restore = async (req, res) => {
 	const { selectedFolders, selectedFiles, all } = req.body;
@@ -10,6 +16,21 @@ const restore = async (req, res) => {
 
 	let folderArgs;
 	let fileArgs;
+	let rootUserFolderIds = [];
+
+	const { ids, size } = await getAllParentFolderIdsAndSize({
+		selectedFolders,
+		selectedFiles,
+		all,
+	});
+
+	const folderSizesUpdates = await folderSizesMutationUpdates([
+		{
+			ids,
+			inc: true,
+			size,
+		},
+	]);
 
 	if (all) {
 		folderArgs = fileArgs = {
@@ -18,6 +39,7 @@ const restore = async (req, res) => {
 			},
 			_set: { deletedInRootUserFolderId: null },
 		};
+		// TODO for all, need to get root folder of user
 	} else {
 		folderArgs = {
 			where: {
@@ -31,25 +53,46 @@ const restore = async (req, res) => {
 			},
 			_set: { deletedInRootUserFolderId: null },
 		};
+
+		for (const selectedFolder of selectedFolders) {
+			const rootFolder = await getRootFolder({
+				id: selectedFolder,
+				__typename: 'folder',
+			});
+			rootUserFolderIds.push(rootFolder.id);
+		}
+		for (const selectedFile of selectedFiles) {
+			const rootFolder = await getRootFolder({
+				id: selectedFile,
+				__typename: 'file',
+			});
+			rootUserFolderIds.push(rootFolder.id);
+		}
 	}
 
-	mutation = gql`
-		mutation {
-			updateFolder(${objectToGraphqlArgs(folderArgs)}) {
-				returning {
-					id
-				}
-			}
-		}
-	`;
-	response = await graphQLClient.request(mutation);
+	rootUserFolderIds = [...new Set(rootUserFolderIds)];
+	const rootFolderTrashSizeUpdate = {
+		where: {
+			id: { _in: rootUserFolderIds },
+		},
+		_inc: { trashSize: size * -1 },
+	};
+
+	const folderManyArgs = {
+		updates: [folderArgs, ...folderSizesUpdates, rootFolderTrashSizeUpdate],
+	};
+
+	const fileManyArgs = {
+		updates: [fileArgs],
+	};
 
 	mutation = gql`
 		mutation {
-			updateFile(${objectToGraphqlArgs(fileArgs)}) {
-				returning {
-					id
-				}
+			updateFolderMany(${objectToGraphqlArgs(folderManyArgs)}) {
+				affected_rows
+			}
+			updateFileMany(${objectToGraphqlArgs(fileManyArgs)}) {
+				affected_rows
 			}
 		}
 	`;
