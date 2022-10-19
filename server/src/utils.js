@@ -5,6 +5,7 @@ import { objectToGraphqlArgs } from 'hasura-args';
 import { graphQLClient } from './endpoint';
 import gql from 'graphql-tag';
 import { userAccessTypeCheck } from './userCheck';
+import { getRecords } from './getRecordsMiddleware';
 
 export const genericMeta = ({ req, userId }) => {
 	return {
@@ -115,18 +116,20 @@ export const getRootFolderArgsAndAccessType = async ({ folderId, userId }) => {
 			},
 		};
 	} else {
-		authorizedToEdit = await userAccessTypeCheck({
-			userId,
+		const records = await getRecords({
 			selectedFolders: [folderId],
 			selectedFiles: [],
+		});
+		authorizedToEdit = await userAccessTypeCheck({
+			userId,
+			records,
 			accessType: 'EDIT',
 		});
 
 		if (!authorizedToEdit) {
 			authorizedToView = await userAccessTypeCheck({
 				userId,
-				selectedFolders: [folderId],
-				selectedFiles: [],
+				records,
 				accessType: 'VIEW',
 			});
 		}

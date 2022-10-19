@@ -25,6 +25,7 @@ import { overrideConsole } from 'nodejs-better-console';
 import { ownerCheck, userEditCheck, userViewCheck } from './userCheck.js';
 import getRootUserFolder from './Routes/getRootUserFolder.js';
 import 'express-async-errors'; // allows for a global level try catch https://stackoverflow.com/a/57527735/4224964
+import { getRecordsMiddleware } from './getRecordsMiddleware.js';
 
 overrideConsole();
 
@@ -56,6 +57,8 @@ app.use(
 		// graphiql: true,
 	})
 ); // https://www.youtube.com/watch?v=Dr2dDWzThK8
+
+app.use(getRecordsMiddleware);
 
 app.post('/upload', userEditCheck, upload);
 app.post('/createNewFolder', userEditCheck, createNewFolder);

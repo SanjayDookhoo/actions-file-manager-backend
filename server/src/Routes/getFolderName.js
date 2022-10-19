@@ -5,20 +5,10 @@ import { gql } from 'graphql-request';
 
 const getFolderName = async (req, res) => {
 	const { id } = req.body;
+	const { records } = res.locals;
+	const { name } = records.getFolder(id);
 
-	const queryArguments = {
-		id,
-	};
-	const query = gql`
-		query {
-			folderByPk(${objectToGraphqlArgs(queryArguments)}) {
-				name
-			}
-		}
-	`;
-
-	const response = await graphQLClient.request(query);
-	res.json(response.folderByPk);
+	res.json({ name });
 };
 
 export default getFolderName;

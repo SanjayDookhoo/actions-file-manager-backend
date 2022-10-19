@@ -7,7 +7,6 @@ import gql from 'graphql-tag';
 import { objectToGraphqlArgs } from 'hasura-args';
 import { graphQLClient } from './endpoint';
 import { getRootFolderArgsAndAccessType, getUserId } from './utils';
-import { userAccessTypeCheck } from './userCheck';
 
 const { GRAPHQL_ENDPOINT_WS } = process.env;
 
@@ -58,7 +57,8 @@ const subscriptionClient = async ({ __typename, folderId, token }) => {
 						created
 						lastAccessed
 					}
-					${__typename == 'file' ? 'size, mimeType' : ''}
+					size
+					${__typename == 'file' ? 'mimeType' : ''}
 				}
 			}
 		`;
