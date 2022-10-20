@@ -1,30 +1,25 @@
 import { graphQLClient } from '../endpoint';
 import {
 	folderSizesMutationUpdates,
+	folderTrashSizesMutationUpdates,
 	genericMeta,
-	getAllParentFolderIdsAndSize,
-	getRootFolder,
 } from '../utils';
 import { objectToGraphqlArgs, objectToGraphqlMutationArgs } from 'hasura-args';
 import { gql } from 'graphql-request';
 
 const remove = async (req, res) => {
 	const { selectedFolders, selectedFiles } = req.body;
+	const { records } = res.locals;
+
 	let mutation;
 	let response;
-	let rootUserFolderIds = [];
 
 	let folderManyArgs = [];
-
 	let fileManyArgs = [];
 
 	for (const selectedFolder of selectedFolders) {
-		const rootFolder = await getRootFolder({
-			id: selectedFolder,
-			__typename: 'folder',
-		});
+		const rootFolder = records.getFolderRoot(selectedFolder);
 		const { userId } = rootFolder.meta;
-		rootUserFolderIds.push(rootFolder.id);
 
 		const folderArgs = {
 			where: {
@@ -36,12 +31,8 @@ const remove = async (req, res) => {
 	}
 
 	for (const selectedFile of selectedFiles) {
-		const rootFolder = await getRootFolder({
-			id: selectedFile,
-			__typename: 'file',
-		});
+		const rootFolder = records.getFileRoot(selectedFile);
 		const { userId } = rootFolder.meta;
-		rootUserFolderIds.push(rootFolder.id);
 
 		const fileArgs = {
 			where: {
@@ -52,32 +43,33 @@ const remove = async (req, res) => {
 		fileManyArgs.push(fileArgs);
 	}
 
-	const { ids, size } = await getAllParentFolderIdsAndSize({
-		selectedFolders,
-		selectedFiles,
-	});
+	const folderIdsAndSizes = records.getFolderIdsAndSizes();
+	const folderSizes = [];
+	const folderTrashSizes = [];
 
-	const folderSizesUpdates = await folderSizesMutationUpdates([
-		{
-			ids,
+	Object.entries(folderIdsAndSizes).forEach(([id, size]) => {
+		folderSizes.push({
+			id,
 			inc: false,
 			size,
-		},
-	]);
-
-	rootUserFolderIds = [...new Set(rootUserFolderIds)];
-	const rootFolderTrashSizeUpdate = {
-		where: {
-			id: { _in: rootUserFolderIds },
-		},
-		_inc: { trashSize: size },
-	};
+		});
+		folderTrashSizes.push({
+			id,
+			inc: true,
+			size,
+		});
+	});
+	const folderSizesUpdates = folderSizesMutationUpdates(records, folderSizes);
+	const folderTrashSizesUpdates = folderTrashSizesMutationUpdates(
+		records,
+		folderTrashSizes
+	);
 
 	folderManyArgs = {
 		updates: [
 			...folderManyArgs,
 			...folderSizesUpdates,
-			rootFolderTrashSizeUpdate,
+			...folderTrashSizesUpdates,
 		],
 	};
 

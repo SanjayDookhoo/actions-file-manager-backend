@@ -87,26 +87,15 @@ export const getRecords = async ({ selectedFolders, selectedFiles }) => {
 		await getFolderpaths({ id, __typename: 'file', data });
 	}
 
-	// only takes the folders and files path of the selectedFolders, and selectedFiles, the intermediary that was use is not included
-	const recordsData = {
-		files: {},
-		folders: {},
-	};
-	selectedFolders.forEach((selectedFolder) => {
-		recordsData.folders[selectedFolder] = data.folders[selectedFolder];
-	});
-	selectedFiles.forEach((selectedFile) => {
-		recordsData.files[selectedFile] = data.files[selectedFile];
-	});
-
-	return new Records(recordsData);
+	const records = new Records({ ...data, selectedFiles, selectedFolders });
+	return records;
 };
 
 const getFolderpaths = async ({ id, __typename, data }) => {
 	const __typenameProperty = __typename + 's';
 
-	if (!id) return [];
-	if (data[__typenameProperty][id]) return data[__typenameProperty][id]; // if it already exists, no need to query database
+	if (!id) return;
+	if (data[__typenameProperty][id]) return; // if it already exists, no need to query database
 
 	const queryArgs = {
 		where: {
@@ -135,16 +124,14 @@ const getFolderpaths = async ({ id, __typename, data }) => {
 	`;
 	const response = await graphQLClient.request(query);
 	const record = response[__typename][0];
-	// data[__typenameProperty][id] = record; // assign to data
+	data[__typenameProperty][id] = record; // assign to data
 	const { folderId } = record;
 
-	const folderPathOfParent = await getFolderpaths({
+	await getFolderpaths({
 		id: folderId,
 		__typename: 'folder',
 		data,
 	});
-
-	return (data[__typenameProperty][id] = [record, ...folderPathOfParent]);
 };
 
 // TODO revisit the need for this function

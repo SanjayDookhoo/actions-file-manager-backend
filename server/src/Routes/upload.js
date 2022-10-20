@@ -10,6 +10,7 @@ import { genericMeta, getUserId, folderSizesMutationUpdates } from '../utils';
 import util from 'util';
 import sharp from 'sharp';
 import { errorHandler } from '../index.js';
+import { getRecords } from '../getRecordsMiddleware.js';
 
 const { GRAPHQL_ENDPOINT, S3_BUCKET } = process.env;
 
@@ -181,9 +182,13 @@ const upload = async (req, res) => {
 						(partialSum, meta) => partialSum + meta.size,
 						0
 					);
-					const folderSizesUpdates = await folderSizesMutationUpdates([
+					const records = await getRecords({
+						selectedFolders: [folderId],
+						selectedFiles: [],
+					});
+					const folderSizesUpdates = folderSizesMutationUpdates(records, [
 						{
-							ids: [folderId],
+							id: folderId,
 							inc: true,
 							size,
 						},

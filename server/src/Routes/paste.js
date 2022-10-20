@@ -2,7 +2,6 @@ import { clipboard } from '..';
 import {
 	capitalizeFirstLetter,
 	genericMeta,
-	getAllParentFolderIdsAndSize,
 	getUserId,
 	thumbnailName,
 	folderSizesMutationUpdates,
@@ -12,18 +11,21 @@ import { GraphQLClient, gql } from 'graphql-request';
 import { graphQLClient } from '../endpoint.js';
 import { objectToGraphqlArgs, objectToGraphqlMutationArgs } from 'hasura-args';
 import s3 from '../s3.js';
+import { getRecords } from '../getRecordsMiddleware';
 
 const { S3_BUCKET } = process.env;
 
 const paste = async (req, res) => {
 	const userId = getUserId({ req });
 	const { folderId } = req.body;
+	const { records } = res.locals;
 
 	if (!clipboard[userId]) {
 		return res.status(400).json({ message: 'cannot complete paste' });
 	}
 
 	const { selectedFolders, selectedFiles, type } = clipboard[userId];
+	const cutCopyRecords = await getRecords({ selectedFolders, selectedFiles });
 	let graphqlResponse;
 
 	if (type == 'cut') {
@@ -49,22 +51,25 @@ const paste = async (req, res) => {
 			},
 		};
 
-		const { ids, size } = await getAllParentFolderIdsAndSize({
-			selectedFolders,
-			selectedFiles,
-		});
+		const folderIdsAndSizes = cutCopyRecords.getFolderIdsAndSizes();
+		const folderSizes = Object.entries(folderIdsAndSizes).map(([id, size]) => ({
+			id,
+			inc: false,
+			size,
+		}));
 
-		const folderSizesUpdates = await folderSizesMutationUpdates([
+		const totalSize = Object.values(folderIdsAndSizes).reduce(
+			(previousValue, currentValue) => previousValue + currentValue,
+			0
+		);
+
+		const folderSizesUpdates = folderSizesMutationUpdates(cutCopyRecords, [
 			{
-				ids: [folderId],
+				id: folderId,
 				inc: true,
-				size,
+				size: totalSize,
 			},
-			{
-				ids,
-				inc: false,
-				size,
-			},
+			...folderSizes,
 		]);
 
 		const folderManyArgs = {
@@ -145,17 +150,14 @@ const paste = async (req, res) => {
 			}
 		`;
 
-		const _getAllParentFolderIdsAndSize = await getAllParentFolderIdsAndSize({
-			selectedFolders,
-			selectedFiles,
-		});
+		// console.log(records);
 
 		graphqlResponse = await graphQLClient.request(selectedFilesQuery);
 		copyFiles({
 			files: graphqlResponse.file,
 			folderId,
 			userId,
-			_getAllParentFolderIdsAndSize,
+			cutCopyRecords,
 		});
 	}
 
@@ -164,12 +166,7 @@ const paste = async (req, res) => {
 
 export default paste;
 
-const copyFiles = async ({
-	files,
-	folderId,
-	userId,
-	_getAllParentFolderIdsAndSize,
-}) => {
+const copyFiles = async ({ files, folderId, userId, cutCopyRecords }) => {
 	const args = [];
 	files.forEach((file) => {
 		const { storedName, ...fileFields } = file;
@@ -210,13 +207,18 @@ const copyFiles = async ({
 		args.push(data);
 	});
 
-	const { ids, size } = _getAllParentFolderIdsAndSize;
+	const folderIdsAndSizes = cutCopyRecords.getFolderIdsAndSizes();
 
-	const folderSizesUpdates = await folderSizesMutationUpdates([
+	const totalSize = Object.values(folderIdsAndSizes).reduce(
+		(previousValue, currentValue) => previousValue + currentValue,
+		0
+	);
+
+	const folderSizesUpdates = folderSizesMutationUpdates(cutCopyRecords, [
 		{
-			ids: [folderId],
+			id: folderId,
 			inc: true,
-			size,
+			size: totalSize,
 		},
 	]);
 
