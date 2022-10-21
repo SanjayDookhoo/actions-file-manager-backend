@@ -70,11 +70,7 @@ const restore = async (req, res) => {
 	);
 
 	folderManyArgs = {
-		updates: [
-			...folderManyArgs,
-			...folderSizesUpdates,
-			...folderTrashSizesUpdates,
-		],
+		updates: [folderArgs, ...folderSizesUpdates, ...folderTrashSizesUpdates],
 	};
 
 	fileManyArgs = {
