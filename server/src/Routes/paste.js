@@ -25,8 +25,14 @@ const paste = async (req, res) => {
 	}
 
 	const { selectedFolders, selectedFiles, type } = clipboard[userId];
-	const cutCopyRecords = await getRecords({ selectedFolders, selectedFiles });
 	let graphqlResponse;
+
+	const cutCopyRecords = await getRecords({ selectedFolders, selectedFiles });
+	const folderIdsAndSizes = cutCopyRecords.getFolderIdsAndSizes();
+	const totalSize = Object.values(folderIdsAndSizes).reduce(
+		(previousValue, currentValue) => previousValue + currentValue,
+		0
+	);
 
 	if (type == 'cut') {
 		delete clipboard[userId];
@@ -51,32 +57,27 @@ const paste = async (req, res) => {
 			},
 		};
 
-		const folderIdsAndSizes = cutCopyRecords.getFolderIdsAndSizes();
 		const folderSizes = Object.entries(folderIdsAndSizes).map(([id, size]) => ({
 			id,
 			inc: false,
 			size,
 		}));
 
-		const totalSize = Object.values(folderIdsAndSizes).reduce(
-			(previousValue, currentValue) => previousValue + currentValue,
-			0
+		const folderSizesUpdates1 = await folderSizesMutationUpdates(
+			cutCopyRecords,
+			[...folderSizes]
 		);
 
-		const folderSizesUpdates = await folderSizesMutationUpdates(
-			cutCopyRecords,
-			[
-				{
-					id: folderId,
-					inc: true,
-					size: totalSize,
-				},
-				...folderSizes,
-			]
-		);
+		const folderSizesUpdates2 = await folderSizesMutationUpdates(records, [
+			{
+				id: folderId,
+				inc: true,
+				size: totalSize,
+			},
+		]);
 
 		const folderManyArgs = {
-			updates: [...folderSizesUpdates, folderArgs],
+			updates: [...folderSizesUpdates1, ...folderSizesUpdates2, folderArgs],
 		};
 
 		const mutation = gql`
@@ -160,7 +161,8 @@ const paste = async (req, res) => {
 			files: graphqlResponse.file,
 			folderId,
 			userId,
-			cutCopyRecords,
+			totalSize,
+			records,
 		});
 	}
 
@@ -169,7 +171,7 @@ const paste = async (req, res) => {
 
 export default paste;
 
-const copyFiles = async ({ files, folderId, userId, cutCopyRecords }) => {
+const copyFiles = async ({ files, folderId, userId, totalSize, records }) => {
 	const args = [];
 	files.forEach((file) => {
 		const { storedName, ...fileFields } = file;
@@ -210,14 +212,7 @@ const copyFiles = async ({ files, folderId, userId, cutCopyRecords }) => {
 		args.push(data);
 	});
 
-	const folderIdsAndSizes = cutCopyRecords.getFolderIdsAndSizes();
-
-	const totalSize = Object.values(folderIdsAndSizes).reduce(
-		(previousValue, currentValue) => previousValue + currentValue,
-		0
-	);
-
-	const folderSizesUpdates = await folderSizesMutationUpdates(cutCopyRecords, [
+	const folderSizesUpdates = await folderSizesMutationUpdates(records, [
 		{
 			id: folderId,
 			inc: true,
