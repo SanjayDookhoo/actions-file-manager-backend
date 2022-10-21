@@ -59,7 +59,10 @@ const remove = async (req, res) => {
 			size,
 		});
 	});
-	const folderSizesUpdates = folderSizesMutationUpdates(records, folderSizes);
+	const folderSizesUpdates = await folderSizesMutationUpdates(
+		records,
+		folderSizes
+	);
 	const folderTrashSizesUpdates = folderTrashSizesMutationUpdates(
 		records,
 		folderTrashSizes

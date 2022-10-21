@@ -63,14 +63,17 @@ const paste = async (req, res) => {
 			0
 		);
 
-		const folderSizesUpdates = folderSizesMutationUpdates(cutCopyRecords, [
-			{
-				id: folderId,
-				inc: true,
-				size: totalSize,
-			},
-			...folderSizes,
-		]);
+		const folderSizesUpdates = await folderSizesMutationUpdates(
+			cutCopyRecords,
+			[
+				{
+					id: folderId,
+					inc: true,
+					size: totalSize,
+				},
+				...folderSizes,
+			]
+		);
 
 		const folderManyArgs = {
 			updates: [...folderSizesUpdates, folderArgs],
@@ -153,7 +156,7 @@ const paste = async (req, res) => {
 		// console.log(records);
 
 		graphqlResponse = await graphQLClient.request(selectedFilesQuery);
-		copyFiles({
+		await copyFiles({
 			files: graphqlResponse.file,
 			folderId,
 			userId,
@@ -214,7 +217,7 @@ const copyFiles = async ({ files, folderId, userId, cutCopyRecords }) => {
 		0
 	);
 
-	const folderSizesUpdates = folderSizesMutationUpdates(cutCopyRecords, [
+	const folderSizesUpdates = await folderSizesMutationUpdates(cutCopyRecords, [
 		{
 			id: folderId,
 			inc: true,

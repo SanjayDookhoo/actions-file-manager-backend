@@ -186,7 +186,7 @@ const upload = async (req, res) => {
 						selectedFolders: [folderId],
 						selectedFiles: [],
 					});
-					const folderSizesUpdates = folderSizesMutationUpdates(records, [
+					const folderSizesUpdates = await folderSizesMutationUpdates(records, [
 						{
 							id: folderId,
 							inc: true,

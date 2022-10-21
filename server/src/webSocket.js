@@ -32,45 +32,92 @@ const createSubscriptionObservable = (wsurl, query, variables) => {
 	return execute(link, { query: query, variables: variables });
 };
 
-const subscriptionClient = async ({ __typename, folderId, token }) => {
+const subscriptionClient = async ({ __typename, type, folderId, token }) => {
 	const userId = getUserId({ token });
 
-	const { args, accessType } = await getRootFolderArgsAndAccessType({
-		folderId,
-		userId,
-	});
+	if (type == 'itemList') {
+		const { args, accessType } = await getRootFolderArgsAndAccessType({
+			folderId,
+			userId,
+		});
 
-	// if a folderId that is a integer is passed in, an actual folderId, accessType will always have a value
-	// use this condition to know if to update a folders lastAccessed
-	if (accessType) {
-		await updateFolderLastAccessed(folderId);
-	}
+		// if a folderId that is a integer is passed in, an actual folderId, accessType will always have a value
+		// use this condition to know if to update a folders lastAccessed
+		if (accessType) {
+			await updateFolderLastAccessed(folderId);
+		}
 
-	const subscribeQuery = (__typename) => {
-		return gql`
-			subscription {
-				${__typename}(${objectToGraphqlArgs(args)}) {
-					id
-					name
-					meta {
-						modified
-						created
-						lastAccessed
+		const subscribeQuery = (__typename) => {
+			return gql`
+				subscription {
+					${__typename}(${objectToGraphqlArgs(args)}) {
+						id
+						name
+						meta {
+							modified
+							created
+							lastAccessed
+						}
+						size
+						${__typename == 'file' ? 'mimeType' : ''}
 					}
-					size
-					${__typename == 'file' ? 'mimeType' : ''}
 				}
-			}
-		`;
-	};
+			`;
+		};
 
-	return {
-		subscriptionObservable: createSubscriptionObservable(
-			GRAPHQL_ENDPOINT_WS,
-			subscribeQuery(__typename)
-		),
-		accessType,
-	};
+		return {
+			subscriptionObservable: createSubscriptionObservable(
+				GRAPHQL_ENDPOINT_WS,
+				subscribeQuery(__typename)
+			),
+			accessType,
+		};
+	} else if (type == 'aggregate' && folderId == 'Recycle bin') {
+		const args = {
+			where: { deletedInRootUserFolderId: { _eq: userId } },
+		};
+
+		const subscribeQuery = (__typename) => {
+			return gql`
+				subscription {
+					${__typename}Aggregate(${objectToGraphqlArgs(args)}) {
+						aggregate {
+							count
+						}
+					}
+				}
+			`;
+		};
+
+		return {
+			subscriptionObservable: createSubscriptionObservable(
+				GRAPHQL_ENDPOINT_WS,
+				subscribeQuery(__typename)
+			),
+		};
+	} else if (type == 'size' && folderId == 'Home' && __typename == 'folder') {
+		const args = {
+			where: { folderId: { _isNull: true }, meta: { userId: { _eq: userId } } },
+		};
+
+		const subscribeQuery = (__typename) => {
+			return gql`
+				subscription {
+					${__typename}(${objectToGraphqlArgs(args)}) {
+						size
+						trashSize
+					}
+				}
+			`;
+		};
+
+		return {
+			subscriptionObservable: createSubscriptionObservable(
+				GRAPHQL_ENDPOINT_WS,
+				subscribeQuery(__typename)
+			),
+		};
+	}
 };
 
 const updateFolderLastAccessed = async (id) => {
@@ -112,14 +159,14 @@ export const webSocket = (server) => {
 		let consumers = [];
 		socket.on('message', async (_data) => {
 			const data = JSON.parse(_data);
-			const { __typename, id } = data;
-			// console.log({ __typename, args, id });
+			const { __typename, id, type } = data;
 
 			// add to list of consumers, so the most recent consumer will be what is returning a result to the frontend
 			// stale queries wont conflict with new queries
 			consumers.unshift({
 				id,
 				__typename,
+				type,
 			});
 
 			const { subscriptionObservable, accessType } = await subscriptionClient({
@@ -131,7 +178,8 @@ export const webSocket = (server) => {
 					// Do something on receipt of the event, if it is the most recent subscription of subscription of
 
 					const mostRecent = consumers.find(
-						(consumer) => consumer.__typename == __typename
+						(consumer) =>
+							consumer.__typename == __typename && consumer.type == type
 					);
 					if (mostRecent.id == id) {
 						socket.send(
@@ -149,25 +197,17 @@ export const webSocket = (server) => {
 			const consumer = consumers.find((consumer) => consumer.id == id);
 			if (consumer) consumer.subscription = subscription;
 
-			const mostRecentFile = consumers.find(
-				(consumer) => consumer.__typename == 'file'
-			);
-			const mostRecentFolder = consumers.find(
-				(consumer) => consumer.__typename == 'folder'
+			const mostRecent = consumers.find(
+				(consumer) => consumer.__typename == __typename && consumer.type == type
 			);
 
 			const toRemove = consumers.filter(
-				(consumer) =>
-					!(
-						consumer.id == mostRecentFile?.id ||
-						consumer.id == mostRecentFolder?.id
-					)
+				(consumer) => !(consumer.id == mostRecent?.id)
 			);
-			consumers = consumers.filter(
-				(consumer) =>
-					consumer.id == mostRecentFile?.id ||
-					consumer.id == mostRecentFolder?.id
-			);
+
+			// console.log(toRemove);
+
+			consumers = consumers.filter((consumer) => consumer.id == mostRecent?.id);
 
 			toRemove.forEach((consumer) => {
 				if (consumer?.subscription?.unsubscribe) {

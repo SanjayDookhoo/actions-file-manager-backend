@@ -87,7 +87,6 @@ export class Records {
 		});
 
 		selectedFolders.forEach((selectedFolder) => {
-			console.log(this.getFolderPath(selectedFolder));
 			const { id } = this.getFolderPath(selectedFolder)[1];
 			const { size } = this.getFolder(selectedFolder);
 			if (id in obj) {
