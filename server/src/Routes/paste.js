@@ -122,6 +122,7 @@ const paste = async (req, res) => {
 				folder,
 				folderId,
 				userId,
+				records,
 			});
 
 			// handle nested folders
@@ -130,6 +131,8 @@ const paste = async (req, res) => {
 					folderIdToCopy: folderId,
 					folderIdToCreateIn: id,
 					userId,
+					totalSize,
+					records,
 				});
 			}
 		}
@@ -237,7 +240,7 @@ const copyFiles = async ({ files, folderId, userId, totalSize, records }) => {
 	await graphQLClient.request(mutation);
 };
 
-const copyFolder = async ({ folder, folderId, userId }) => {
+const copyFolder = async ({ folder, folderId, userId, records }) => {
 	const { name } = folder;
 
 	// create new file records for the database
@@ -256,6 +259,11 @@ const copyFolder = async ({ folder, folderId, userId }) => {
 	`;
 
 	const response = await graphQLClient.request(mutation);
+	// adds nested folder to records
+	records.addFolder({
+		id: response.insertFolderOne.id,
+		...data,
+	});
 	return response.insertFolderOne;
 };
 
@@ -263,6 +271,8 @@ const recursiveFolderCopy = async ({
 	folderIdToCopy,
 	folderIdToCreateIn,
 	userId,
+	totalSize,
+	records,
 }) => {
 	let graphqlResponse;
 
@@ -290,6 +300,7 @@ const recursiveFolderCopy = async ({
 			folder,
 			folderId: folderIdToCreateIn,
 			userId,
+			records,
 		});
 
 		// go through folders and find other folders and files
@@ -297,6 +308,8 @@ const recursiveFolderCopy = async ({
 			folderIdToCopy: folder.id,
 			folderIdToCreateIn: id,
 			userId,
+			totalSize,
+			records,
 		});
 	}
 
@@ -321,9 +334,11 @@ const recursiveFolderCopy = async ({
 	`;
 	graphqlResponse = await graphQLClient.request(fileQuery);
 
-	copyFiles({
+	await copyFiles({
 		files: graphqlResponse.file,
 		folderId: folderIdToCreateIn,
 		userId,
+		totalSize,
+		records,
 	});
 };

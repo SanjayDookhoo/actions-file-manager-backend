@@ -217,7 +217,8 @@ export const folderSizesMutationUpdates = async (
 // the role will be used to determine the max size, and that is checked here, throw an error if writing shouldnt be allowed
 // testing
 const userMaxSizeCheck = async (userId) => {
-	return 20000000;
+	// return 11044304;
+	return 91044304;
 };
 
 export const folderTrashSizesMutationUpdates = (

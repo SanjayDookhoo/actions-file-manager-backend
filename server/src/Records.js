@@ -98,4 +98,8 @@ export class Records {
 
 		return obj;
 	}
+
+	addFolder(folder) {
+		this.data.folders[folder.id] = folder;
+	}
 }
