@@ -117,6 +117,12 @@ const upload = async (req, res) => {
 					const mutationArguments = [];
 					const filesPathSet = [...new Set(filesPath)];
 					const filesPathMapToFolderId = {};
+					const filesPathMapSize = {};
+
+					const records = await getRecords({
+						selectedFolders: [folderId],
+						selectedFiles: [],
+					});
 
 					const _recursiveFolderCreation = async (fullPath) => {
 						if (!fullPath) return null;
@@ -136,21 +142,26 @@ const upload = async (req, res) => {
 							parentFolderId = folderId;
 						}
 
-						const mutationArguments = {
+						const data = {
 							name,
 							folderId: parentFolderId,
 							meta: genericMeta({ userId }),
 						};
 						const mutation = gql`
 							mutation {
-								insertFolderOne(${objectToGraphqlMutationArgs(mutationArguments)}) {
+								insertFolderOne(${objectToGraphqlMutationArgs(data)}) {
 									id
 								}
 							}
 						`;
 
 						const response = await graphQLClient.request(mutation);
-						filesPathMapToFolderId[fullPath] = response.insertFolderOne.id;
+						const newFolderId = response.insertFolderOne.id;
+						records.addFolder({
+							id: newFolderId,
+							...data,
+						});
+						filesPathMapToFolderId[fullPath] = newFolderId;
 					};
 
 					// forEach does not work as intended, but this does,
@@ -165,34 +176,38 @@ const upload = async (req, res) => {
 						const { name, size, mimeType } = fileMeta[i];
 						const filePath = filesPath[i];
 
+						const folderId = filesPathMapToFolderId[filePath];
+						if (folderId) {
+							if (filesPathMapSize[folderId]) {
+								filesPathMapSize[folderId] += size;
+							} else {
+								filesPathMapSize[folderId] = size;
+							}
+						}
+
 						const data = {
 							name,
 							storedName: Key,
 							size,
 							mimeType,
-							folderId: filesPathMapToFolderId[filePath]
-								? filesPathMapToFolderId[filePath]
-								: folderId,
+							folderId: folderId ? folderId : folderId,
 							meta: genericMeta({ userId }),
 						};
 						mutationArguments.push(data);
 					});
 
-					const size = fileMeta.reduce(
-						(partialSum, meta) => partialSum + meta.size,
-						0
-					);
-					const records = await getRecords({
-						selectedFolders: [folderId],
-						selectedFiles: [],
-					});
-					const folderSizesUpdates = await folderSizesMutationUpdates(records, [
-						{
-							id: folderId,
+					const folderSizes = Object.entries(filesPathMapSize).map(
+						([id, size]) => ({
+							id,
 							inc: true,
 							size,
-						},
-					]);
+						})
+					);
+
+					const folderSizesUpdates = await folderSizesMutationUpdates(
+						records,
+						folderSizes
+					);
 
 					const mutation = gql`
 						mutation {

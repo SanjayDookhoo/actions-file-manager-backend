@@ -12,6 +12,7 @@ import { graphQLClient } from '../endpoint.js';
 import { objectToGraphqlArgs, objectToGraphqlMutationArgs } from 'hasura-args';
 import s3 from '../s3.js';
 import { getRecords } from '../getRecordsMiddleware';
+import { Records } from '../Records';
 
 const { S3_BUCKET } = process.env;
 
@@ -39,6 +40,26 @@ const paste = async (req, res) => {
 
 		let args, response;
 
+		const idsOfFolderPathPastingInto = records
+			.getFolderPath(folderId)
+			.map((record) => record.id);
+		// Check if an array contains any element of another array
+		const found = selectedFolders.some((el) =>
+			idsOfFolderPathPastingInto.includes(el)
+		);
+		if (found) {
+			throw {
+				response: {
+					errors: [
+						{
+							message:
+								'The destination folder is a subfolder of the source folder',
+						},
+					],
+				},
+			};
+		}
+
 		const folderArgs = {
 			where: {
 				id: { _in: selectedFolders },
@@ -63,12 +84,18 @@ const paste = async (req, res) => {
 			size,
 		}));
 
-		const folderSizesUpdates1 = await folderSizesMutationUpdates(
-			cutCopyRecords,
-			[...folderSizes]
-		);
+		const _mergeRecords = (records1, records2) => {
+			const data = {};
+			Object.keys(records1.data).forEach((key) => {
+				data[key] = { ...records1.data[key], ...records2.data[key] };
+			});
+			return new Records(data);
+		};
 
-		const folderSizesUpdates2 = await folderSizesMutationUpdates(records, [
+		const newRecords = _mergeRecords(cutCopyRecords, records);
+
+		const folderSizesUpdates = await folderSizesMutationUpdates(newRecords, [
+			...folderSizes,
 			{
 				id: folderId,
 				inc: true,
@@ -77,7 +104,7 @@ const paste = async (req, res) => {
 		]);
 
 		const folderManyArgs = {
-			updates: [...folderSizesUpdates1, ...folderSizesUpdates2, folderArgs],
+			updates: [...folderSizesUpdates, folderArgs],
 		};
 
 		const mutation = gql`
