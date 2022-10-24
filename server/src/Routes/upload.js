@@ -176,12 +176,12 @@ const upload = async (req, res) => {
 						const { name, size, mimeType } = fileMeta[i];
 						const filePath = filesPath[i];
 
-						const folderId = filesPathMapToFolderId[filePath];
-						if (folderId) {
-							if (filesPathMapSize[folderId]) {
-								filesPathMapSize[folderId] += size;
+						const id = filesPathMapToFolderId[filePath] ?? folderId;
+						if (id) {
+							if (filesPathMapSize[id]) {
+								filesPathMapSize[id] += size;
 							} else {
-								filesPathMapSize[folderId] = size;
+								filesPathMapSize[id] = size;
 							}
 						}
 
@@ -190,7 +190,7 @@ const upload = async (req, res) => {
 							storedName: Key,
 							size,
 							mimeType,
-							folderId: folderId ? folderId : folderId,
+							folderId: id,
 							meta: genericMeta({ userId }),
 						};
 						mutationArguments.push(data);
