@@ -4,7 +4,11 @@ table:
 object_relationships:
   - name: meta
     using:
-      foreign_key_constraint_on: meta_id
+      foreign_key_constraint_on:
+        column: folder_id
+        table:
+          name: meta
+          schema: public
   - name: parentFolder
     using:
       foreign_key_constraint_on: folder_id

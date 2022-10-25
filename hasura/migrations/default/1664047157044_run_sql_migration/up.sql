@@ -1,5 +1,0 @@
-CREATE OR REPLACE TRIGGER updateMetaModifiedTrigger
-BEFORE UPDATE
-ON file
-FOR EACH ROW
-EXECUTE PROCEDURE updateMetaModified();

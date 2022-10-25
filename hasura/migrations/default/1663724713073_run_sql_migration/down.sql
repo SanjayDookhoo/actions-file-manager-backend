@@ -1,4 +1,0 @@
--- Could not auto-generate a down migration.
--- Please write an appropriate down migration for the SQL below:
--- ALTER TABLE shared_with_me
---   RENAME COLUMN sharing_id_list TO collection;

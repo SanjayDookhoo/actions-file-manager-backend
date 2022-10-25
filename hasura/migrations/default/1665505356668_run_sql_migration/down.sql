@@ -1,4 +1,0 @@
--- Could not auto-generate a down migration.
--- Please write an appropriate down migration for the SQL below:
--- ALTER TABLE file
---     ADD mime_type varchar(50) not null;

@@ -121,23 +121,10 @@ const subscriptionClient = async ({ __typename, type, folderId, token }) => {
 };
 
 const updateFolderLastAccessed = async (id) => {
-	// get link
-	const queryArgs = {
-		id,
-	};
-	const query = gql`
-		query {
-			folderByPk(${objectToGraphqlArgs(queryArgs)}) {
-				metaId
-			}
-		}
-	`;
-	const response = await graphQLClient.request(query);
-
 	// update lastAccessed
 	const mutationArgs = {
 		where: {
-			id: { _eq: response.folderByPk.metaId },
+			folderId: { _eq: id },
 		},
 		_set: { lastAccessed: 'now()' },
 	};

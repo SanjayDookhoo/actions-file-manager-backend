@@ -14,7 +14,6 @@ const downloadFIle = async (req, res) => {
 	const query = gql`
 		query {
 			fileByPk(${objectToGraphqlArgs(queryArgs)}) {
-				metaId
 				fileLink {
 					URL
 					thumbnailURL
@@ -27,7 +26,7 @@ const downloadFIle = async (req, res) => {
 	// update lastAccessed
 	const mutationArgs = {
 		where: {
-			id: { _eq: response.fileByPk.metaId },
+			fileId: { _eq: id },
 		},
 		_set: { lastAccessed: 'now()' },
 	};

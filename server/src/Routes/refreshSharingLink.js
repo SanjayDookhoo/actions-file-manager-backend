@@ -44,7 +44,7 @@ const refreshSharingLink = async (req, res) => {
 		query = gql`
 			query {
 				${__typename}(${objectToGraphqlArgs(args)}) {
-					metaId
+					id
 				}
 			}
 		`;
@@ -52,7 +52,7 @@ const refreshSharingLink = async (req, res) => {
 		if (queryResponse[__typename].length != 0) {
 			const mutationArgs = {
 				where: {
-					id: { _eq: queryResponse[__typename][0].metaId },
+					[`${__typename}Id`]: { _eq: queryResponse[__typename][0].id },
 				},
 				_set: { modified: 'now()' },
 			};

@@ -4,4 +4,8 @@ table:
 object_relationships:
   - name: sharingPermission
     using:
-      foreign_key_constraint_on: sharing_permission_id
+      foreign_key_constraint_on:
+        column: meta_id
+        table:
+          name: sharing_permission
+          schema: public

@@ -7,7 +7,11 @@ object_relationships:
       foreign_key_constraint_on: folder_id
   - name: meta
     using:
-      foreign_key_constraint_on: meta_id
+      foreign_key_constraint_on:
+        column: file_id
+        table:
+          name: meta
+          schema: public
 remote_relationships:
   - definition:
       hasura_fields:
