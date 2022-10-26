@@ -176,7 +176,7 @@ export const folderSizesMutationUpdates = async (
 	let updates = [];
 	let newRootSizesByUserId = {};
 
-	for (const { id, inc, size } of folderSizesUpdates) {
+	for (const { id, inc, size, stopAtDeleted } of folderSizesUpdates) {
 		const addSize = size * (inc ? 1 : -1);
 		const root = records.getFolderRoot(id);
 		const { userId } = root.meta;
@@ -186,15 +186,23 @@ export const folderSizesMutationUpdates = async (
 		}
 		newRootSizesByUserId[userId] += addSize;
 
-		updates = [
-			...updates,
-			...records.getFolderPath(id).map(({ id }) => ({
-				where: { id: { _eq: id } },
+		const newUpdates = [];
+		const path = records.getFolderPath(id);
+
+		for (const folder of path) {
+			newUpdates.push({
+				where: { id: { _eq: folder.id } },
 				_inc: {
 					size: addSize,
 				},
-			})),
-		];
+			});
+			// break after changing size of the folder that is deleted
+			if (stopAtDeleted && folder.deletedInRootUserFolderId) {
+				break;
+			}
+		}
+
+		updates = [...updates, ...newUpdates];
 	}
 
 	// console.log(newRootSizesByUserId);
@@ -227,16 +235,22 @@ export const folderTrashSizesMutationUpdates = (
 ) => {
 	let updates = [];
 
-	for (const { id, inc, size } of folderSizesUpdates) {
-		updates = [
-			...updates,
-			{
-				where: { id: { _eq: records.getFolderRoot(id).id } },
-				_inc: {
-					trashSize: size * (inc ? 1 : -1),
+	for (const { id, inc, size, stopAtDeleted } of folderSizesUpdates) {
+		const path = records.getFolderPath(id);
+		const foundDeleted = path.filter(
+			(folder) => folder.deletedInRootUserFolderId
+		);
+		if (!stopAtDeleted || (stopAtDeleted && !foundDeleted)) {
+			updates = [
+				...updates,
+				{
+					where: { id: { _eq: records.getFolderRoot(id).id } },
+					_inc: {
+						trashSize: size * (inc ? 1 : -1),
+					},
 				},
-			},
-		];
+			];
+		}
 	}
 	// update folders mutation
 	return updates;

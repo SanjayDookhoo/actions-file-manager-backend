@@ -75,11 +75,13 @@ const restore = async (req, res) => {
 			id,
 			inc: true,
 			size,
+			stopAtDeleted: true,
 		});
 		folderTrashSizes.push({
 			id,
 			inc: false,
 			size,
+			stopAtDeleted: true,
 		});
 	});
 	const folderSizesUpdates = await folderSizesMutationUpdates(
