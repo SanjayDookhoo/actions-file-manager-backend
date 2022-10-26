@@ -25,7 +25,7 @@ const remove = async (req, res) => {
 			where: {
 				id: { _eq: selectedFolder },
 			},
-			_set: { deletedInRootUserFolderId: userId },
+			_set: { deletedInRootToUserId: userId },
 		};
 		folderManyArgs.push(folderArgs);
 	}
@@ -38,7 +38,7 @@ const remove = async (req, res) => {
 			where: {
 				id: { _eq: selectedFile },
 			},
-			_set: { deletedInRootUserFolderId: userId },
+			_set: { deletedInRootToUserId: userId },
 		};
 		fileManyArgs.push(fileArgs);
 	}

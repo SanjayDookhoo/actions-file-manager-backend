@@ -70,7 +70,7 @@ export const getRootFolderArgsAndAccessType = async ({ folderId, userId }) => {
 			where: {
 				_and: [
 					{ folderId: { _eq: id } },
-					{ deletedInRootUserFolderId: { _isNull: true } },
+					{ deletedInRootToUserId: { _isNull: true } },
 				],
 			},
 		};
@@ -105,14 +105,14 @@ export const getRootFolderArgsAndAccessType = async ({ folderId, userId }) => {
 							},
 						},
 					},
-					{ deletedInRootUserFolderId: { _isNull: true } },
+					{ deletedInRootToUserId: { _isNull: true } },
 				],
 			},
 		};
 	} else if (folderId == 'Recycle bin') {
 		args = {
 			where: {
-				_and: [{ deletedInRootUserFolderId: { _eq: userId } }],
+				_and: [{ deletedInRootToUserId: { _eq: userId } }],
 			},
 		};
 	} else {
@@ -140,7 +140,7 @@ export const getRootFolderArgsAndAccessType = async ({ folderId, userId }) => {
 				where: {
 					_and: [
 						{ folderId: { _eq: folderId } },
-						{ deletedInRootUserFolderId: { _isNull: true } },
+						{ deletedInRootToUserId: { _isNull: true } },
 					],
 				},
 			};
@@ -197,7 +197,7 @@ export const folderSizesMutationUpdates = async (
 				},
 			});
 			// break after changing size of the folder that is deleted
-			if (stopAtDeleted && folder.deletedInRootUserFolderId) {
+			if (stopAtDeleted && folder.deletedInRootToUserId) {
 				break;
 			}
 		}
@@ -237,9 +237,7 @@ export const folderTrashSizesMutationUpdates = (
 
 	for (const { id, inc, size, stopAtDeleted } of folderSizesUpdates) {
 		const path = records.getFolderPath(id);
-		const foundDeleted = path.filter(
-			(folder) => folder.deletedInRootUserFolderId
-		);
+		const foundDeleted = path.filter((folder) => folder.deletedInRootToUserId);
 		if (!stopAtDeleted || (stopAtDeleted && !foundDeleted)) {
 			updates = [
 				...updates,

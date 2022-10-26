@@ -100,7 +100,7 @@ const recursiveFolderSearch = async (
 		where: {
 			_and: [
 				{ folderId: { _eq: folderId } },
-				{ deletedInRootUserFolderId: { _isNull: true } },
+				{ deletedInRootToUserId: { _isNull: true } },
 			],
 		},
 	};
@@ -132,7 +132,7 @@ const recursiveFolderSearch = async (
 			_and: [
 				{ _or: orCondition },
 				{ folderId: { _eq: folderId } },
-				{ deletedInRootUserFolderId: { _isNull: true } },
+				{ deletedInRootToUserId: { _isNull: true } },
 			],
 		},
 	};

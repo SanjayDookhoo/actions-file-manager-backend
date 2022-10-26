@@ -21,7 +21,7 @@ CREATE TABLE public.file (
     stored_name character varying(50) NOT NULL,
     size bigint NOT NULL,
     folder_id integer,
-    deleted_in_root_user_folder_id character varying(50),
+    deleted_in_root_to_user_id character varying(50),
     mime_type character varying(255) NOT NULL
 );
 CREATE SEQUENCE public.file_id_seq
@@ -36,7 +36,7 @@ CREATE TABLE public.folder (
     id integer NOT NULL,
     name character varying(255) NOT NULL,
     folder_id integer,
-    deleted_in_root_user_folder_id character varying(50),
+    deleted_in_root_to_user_id character varying(50),
     size bigint DEFAULT 0,
     trash_size bigint
 );

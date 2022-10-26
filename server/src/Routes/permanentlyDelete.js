@@ -24,7 +24,7 @@ const permanentlyDelete = async (req, res) => {
 			fileArgs =
 				{
 					where: {
-						deletedInRootUserFolderId: { _isNull: false },
+						deletedInRootToUserId: { _isNull: false },
 					},
 				});
 

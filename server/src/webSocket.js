@@ -74,7 +74,7 @@ const subscriptionClient = async ({ __typename, type, folderId, token }) => {
 		};
 	} else if (type == 'aggregate' && folderId == 'Recycle bin') {
 		const args = {
-			where: { deletedInRootUserFolderId: { _eq: userId } },
+			where: { deletedInRootToUserId: { _eq: userId } },
 		};
 
 		const subscribeQuery = (__typename) => {

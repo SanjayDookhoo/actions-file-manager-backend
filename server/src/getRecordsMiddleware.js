@@ -109,7 +109,7 @@ const getFolderpaths = async ({ id, __typename, data }) => {
 				name
 				folderId
 				size
-				deletedInRootUserFolderId
+				deletedInRootToUserId
 				${__typename == 'folder' ? 'trashSize' : ''}
 				meta {
 					userId

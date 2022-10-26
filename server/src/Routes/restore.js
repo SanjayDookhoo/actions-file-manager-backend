@@ -25,12 +25,12 @@ const restore = async (req, res) => {
 	if (all) {
 		const queryArgs = {
 			where: {
-				deletedInRootUserFolderId: { _isNull: false },
+				deletedInRootToUserId: { _isNull: false },
 			},
 		};
 		folderArgs = fileArgs = {
 			...queryArgs,
-			_set: { deletedInRootUserFolderId: null },
+			_set: { deletedInRootToUserId: null },
 		};
 
 		const query = gql`
@@ -54,13 +54,13 @@ const restore = async (req, res) => {
 			where: {
 				id: { _in: selectedFolders },
 			},
-			_set: { deletedInRootUserFolderId: null },
+			_set: { deletedInRootToUserId: null },
 		};
 		fileArgs = {
 			where: {
 				id: { _in: selectedFiles },
 			},
-			_set: { deletedInRootUserFolderId: null },
+			_set: { deletedInRootToUserId: null },
 		};
 
 		records = res.locals.records;

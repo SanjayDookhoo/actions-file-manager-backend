@@ -131,7 +131,7 @@ const paste = async (req, res) => {
 			where: {
 				_and: [
 					{ id: { _in: selectedFolders } },
-					{ deletedInRootUserFolderId: { _isNull: true } },
+					{ deletedInRootToUserId: { _isNull: true } },
 				],
 			},
 		};
@@ -169,7 +169,7 @@ const paste = async (req, res) => {
 			where: {
 				_and: [
 					{ id: { _in: selectedFiles } },
-					{ deletedInRootUserFolderId: { _isNull: true } },
+					{ deletedInRootToUserId: { _isNull: true } },
 				],
 			},
 		};
@@ -308,7 +308,7 @@ const recursiveFolderCopy = async ({
 		where: {
 			_and: [
 				{ folderId: { _eq: folderIdToCopy } },
-				{ deletedInRootUserFolderId: { _isNull: true } },
+				{ deletedInRootToUserId: { _isNull: true } },
 			],
 		},
 	};
@@ -345,7 +345,7 @@ const recursiveFolderCopy = async ({
 		where: {
 			_and: [
 				{ folderId: { _eq: folderIdToCopy } },
-				{ deletedInRootUserFolderId: { _isNull: true } },
+				{ deletedInRootToUserId: { _isNull: true } },
 			],
 		},
 	};
