@@ -7,10 +7,11 @@ import {
 import { objectToGraphqlArgs, objectToGraphqlMutationArgs } from 'hasura-args';
 import { gql } from 'graphql-request';
 import getRootUserFolder from './getRootUserFolder';
+import { getRecords } from '../getRecordsMiddleware';
 
 const restore = async (req, res) => {
 	const { selectedFolders, selectedFiles, all } = req.body;
-	const { records } = res.locals;
+	let records;
 
 	let mutation;
 	let response;
@@ -22,13 +23,32 @@ const restore = async (req, res) => {
 	let fileArgs;
 
 	if (all) {
-		folderArgs = fileArgs = {
+		const queryArgs = {
 			where: {
 				deletedInRootUserFolderId: { _isNull: false },
 			},
+		};
+		folderArgs = fileArgs = {
+			...queryArgs,
 			_set: { deletedInRootUserFolderId: null },
 		};
-		// TODO for all, need to get root folder of user
+
+		const query = gql`
+			query {
+				folder(${objectToGraphqlArgs(queryArgs)}) {
+					id
+				}
+				file(${objectToGraphqlArgs(queryArgs)}) {
+					id
+				}
+			}
+		`;
+		response = await graphQLClient.request(query);
+
+		const selectedFiles = response.file.map((record) => record.id);
+		const selectedFolders = response.folder.map((record) => record.id);
+
+		records = await getRecords({ selectedFiles, selectedFolders });
 	} else {
 		folderArgs = {
 			where: {
@@ -42,6 +62,8 @@ const restore = async (req, res) => {
 			},
 			_set: { deletedInRootUserFolderId: null },
 		};
+
+		records = res.locals.records;
 	}
 
 	const folderIdsAndSizes = records.getFolderIdsAndSizes();
@@ -90,6 +112,7 @@ const restore = async (req, res) => {
 	response = await graphQLClient.request(mutation);
 
 	res.json(response);
+	// res.json({});
 };
 
 export default restore;

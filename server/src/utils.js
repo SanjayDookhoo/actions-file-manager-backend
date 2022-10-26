@@ -182,7 +182,7 @@ export const folderSizesMutationUpdates = async (
 		const { userId } = root.meta;
 
 		if (!(userId in newRootSizesByUserId)) {
-			newRootSizesByUserId[userId] = root.size;
+			newRootSizesByUserId[userId] = root.size + root.trashSize;
 		}
 		newRootSizesByUserId[userId] += addSize;
 
@@ -218,7 +218,7 @@ export const folderSizesMutationUpdates = async (
 // testing
 const userMaxSizeCheck = async (userId) => {
 	// return 11044304;
-	return 91044304;
+	return 99544015222255;
 };
 
 export const folderTrashSizesMutationUpdates = (

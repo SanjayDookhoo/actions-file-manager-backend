@@ -6,10 +6,11 @@ import {
 } from '../utils';
 import { objectToGraphqlArgs, objectToGraphqlMutationArgs } from 'hasura-args';
 import { gql } from 'graphql-request';
+import { getRecords } from '../getRecordsMiddleware';
 
 const permanentlyDelete = async (req, res) => {
 	const { selectedFolders, selectedFiles, all } = req.body;
-	const { records } = res.locals;
+	let records;
 
 	let mutation;
 	let response;
@@ -18,17 +19,31 @@ const permanentlyDelete = async (req, res) => {
 	let fileArgs;
 
 	if (all) {
-		folderArgs = {
-			where: {
-				deletedInRootUserFolderId: { _isNull: false },
-			},
-		};
-		fileArgs = {
-			where: {
-				deletedInRootUserFolderId: { _isNull: false },
-			},
-		};
-		// TODO for all, need to get root folder of user
+		const queryArgs =
+			(folderArgs =
+			fileArgs =
+				{
+					where: {
+						deletedInRootUserFolderId: { _isNull: false },
+					},
+				});
+
+		const query = gql`
+			query {
+				folder(${objectToGraphqlArgs(queryArgs)}) {
+					id
+				}
+				file(${objectToGraphqlArgs(queryArgs)}) {
+					id
+				}
+			}
+		`;
+		response = await graphQLClient.request(query);
+
+		const selectedFiles = response.file.map((record) => record.id);
+		const selectedFolders = response.folder.map((record) => record.id);
+
+		records = await getRecords({ selectedFiles, selectedFolders });
 	} else {
 		folderArgs = {
 			where: {
@@ -40,6 +55,8 @@ const permanentlyDelete = async (req, res) => {
 				id: { _in: selectedFiles },
 			},
 		};
+
+		records = res.locals.records;
 	}
 
 	const folderIdsAndSizes = records.getFolderIdsAndSizes();

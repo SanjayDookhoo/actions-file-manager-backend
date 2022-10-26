@@ -119,6 +119,7 @@ const upload = async (req, res) => {
 					const filesPathMapToFolderId = {};
 					const filesPathMapSize = {};
 
+					// after all uploads are completed, which may take some time, getRecords then, rather than using what is in res.locals, since the size may be stale data
 					const records = await getRecords({
 						selectedFolders: [folderId],
 						selectedFiles: [],
