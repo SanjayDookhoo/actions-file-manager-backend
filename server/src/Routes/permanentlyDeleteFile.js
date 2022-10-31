@@ -8,7 +8,7 @@ const permanentlyDeleteFile = async (req, res) => {
 	const { stored_name: storedName } = req.body.event.data.old;
 	let params;
 
-	if (req.headers.secret_header != SECRET_HEADER) {
+	if (req.headers.secret_header !== SECRET_HEADER) {
 		return res.status(400).json({ message: 'not authorized' });
 	}
 

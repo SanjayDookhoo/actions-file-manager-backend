@@ -43,7 +43,7 @@ export const getRootFolderArgsAndAccessType = async ({ folderId, userId }) => {
 	let args;
 	let authorizedToEdit, authorizedToView;
 
-	if (folderId == 'Home') {
+	if (folderId === 'Home') {
 		const otherArgs = {
 			where: {
 				_and: [
@@ -64,7 +64,7 @@ export const getRootFolderArgsAndAccessType = async ({ folderId, userId }) => {
             }
         `;
 		const res = await graphQLClient.request(query);
-		const id = res.folder.length == 0 ? 0 : res.folder[0].id;
+		const id = res.folder.length === 0 ? 0 : res.folder[0].id;
 
 		args = {
 			where: {
@@ -74,7 +74,7 @@ export const getRootFolderArgsAndAccessType = async ({ folderId, userId }) => {
 				],
 			},
 		};
-	} else if (folderId == 'Shared with me') {
+	} else if (folderId === 'Shared with me') {
 		const otherArgs = {
 			where: { userId: { _eq: userId } },
 		};
@@ -89,7 +89,7 @@ export const getRootFolderArgsAndAccessType = async ({ folderId, userId }) => {
 		const res = await graphQLClient.request(query);
 
 		let _in;
-		if (res.sharedWithMe.length != 0) {
+		if (res.sharedWithMe.length !== 0) {
 			_in = JSON.parse(res.sharedWithMe[0].collection);
 		} else {
 			_in = [];
@@ -109,7 +109,7 @@ export const getRootFolderArgsAndAccessType = async ({ folderId, userId }) => {
 				],
 			},
 		};
-	} else if (folderId == 'Recycle bin') {
+	} else if (folderId === 'Recycle bin') {
 		args = {
 			where: {
 				_and: [{ deletedInRootToUserId: { _eq: userId } }],

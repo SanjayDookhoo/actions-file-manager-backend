@@ -1,13 +1,11 @@
 import { clipboard } from '..';
 import {
-	capitalizeFirstLetter,
 	genericMeta,
 	getUserId,
 	thumbnailName,
 	folderSizesMutationUpdates,
 } from '../utils';
 import { v4 as uuidv4 } from 'uuid';
-import { GraphQLClient, gql } from 'graphql-request';
 import { graphQLClient } from '../endpoint.js';
 import { objectToGraphqlArgs, objectToGraphqlMutationArgs } from 'hasura-args';
 import s3 from '../s3.js';
@@ -35,7 +33,7 @@ const paste = async (req, res) => {
 		0
 	);
 
-	if (type == 'cut') {
+	if (type === 'cut') {
 		delete clipboard[userId];
 
 		let args, response;

@@ -29,7 +29,7 @@ const getRootUserFolder = async (req, res) => {
     `;
 	response = await graphQLClient.request(query);
 
-	if (response.folder.length == 0) {
+	if (response.folder.length === 0) {
 		const mutationArguments = {
 			name: `${userId}_root_folder`,
 			trashSize: 0,

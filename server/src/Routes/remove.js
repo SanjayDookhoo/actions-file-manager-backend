@@ -2,9 +2,8 @@ import { graphQLClient } from '../endpoint';
 import {
 	folderSizesMutationUpdates,
 	folderTrashSizesMutationUpdates,
-	genericMeta,
 } from '../utils';
-import { objectToGraphqlArgs, objectToGraphqlMutationArgs } from 'hasura-args';
+import { objectToGraphqlArgs } from 'hasura-args';
 import { gql } from 'graphql-request';
 
 const remove = async (req, res) => {

@@ -10,7 +10,7 @@ import search from './Routes/search.js';
 import paste from './Routes/paste.js';
 import copy from './Routes/copy.js';
 import cut from './Routes/cut.js';
-import downloadFIle from './Routes/downloadFIle.js';
+import downloadFile from './Routes/downloadFile.js';
 import rename from './Routes/rename.js';
 import http from 'http';
 import getFolderName from './Routes/getFolderName.js';
@@ -68,7 +68,7 @@ app.post('/rename', userEditCheck, rename);
 app.post('/remove', userEditCheck, remove);
 app.post('/search', userViewCheck, search);
 app.post('/copy', userViewCheck, copy);
-app.post('/downloadFile', userViewCheck, downloadFIle);
+app.post('/downloadFile', userViewCheck, downloadFile);
 app.post('/getFolderName', userViewCheck, getFolderName);
 app.post('/getSharingLinks', userViewCheck, getSharingLinks); // check if owner inside function, and return both if so, otherwise just return view
 app.post('/restore', ownerCheck, restore);

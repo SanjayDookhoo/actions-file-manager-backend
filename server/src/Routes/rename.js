@@ -1,6 +1,6 @@
 import { graphQLClient } from '../endpoint';
-import { capitalizeFirstLetter, genericMeta } from '../utils';
-import { objectToGraphqlArgs, objectToGraphqlMutationArgs } from 'hasura-args';
+import { capitalizeFirstLetter } from '../utils';
+import { objectToGraphqlArgs } from 'hasura-args';
 import { gql } from 'graphql-request';
 
 const rename = async (req, res) => {

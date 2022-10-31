@@ -1,4 +1,4 @@
-import { GraphQLClient, gql } from 'graphql-request';
+import { gql } from 'graphql-request';
 import meter from 'stream-meter';
 import BusBoy from 'busboy';
 import { v4 as uuidv4 } from 'uuid';
@@ -7,12 +7,11 @@ import s3 from '../s3.js';
 import { objectToGraphqlArgs, objectToGraphqlMutationArgs } from 'hasura-args';
 import { graphQLClient } from '../endpoint.js';
 import { genericMeta, getUserId, folderSizesMutationUpdates } from '../utils';
-import util from 'util';
 import sharp from 'sharp';
 import { errorHandler } from '../index.js';
 import { getRecords } from '../getRecordsMiddleware.js';
 
-const { GRAPHQL_ENDPOINT, S3_BUCKET } = process.env;
+const { S3_BUCKET } = process.env;
 
 // https://stackoverflow.com/questions/37336050/pipe-a-stream-to-s3-upload
 const uploadFromStream = ({ ext, uuid, pending, thumbnail = false }) => {
@@ -104,7 +103,7 @@ const upload = async (req, res) => {
 
 	busboy.on('field', (field, val) => {
 		tryCatch(() => {
-			if (field == 'filesPath') {
+			if (field === 'filesPath') {
 				filesPath = JSON.parse(val);
 			}
 		});

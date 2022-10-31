@@ -1,5 +1,5 @@
 import { graphQLClient } from '../endpoint';
-import { genericMeta, getUserId } from '../utils';
+import { getUserId } from '../utils';
 import { objectToGraphqlArgs, objectToGraphqlMutationArgs } from 'hasura-args';
 import { gql } from 'graphql-request';
 
@@ -28,7 +28,7 @@ const addSharedWithMe = async (req, res) => {
 	`;
 	response = await graphQLClient.request(query);
 
-	if (response.sharedWithMe.length == 0) {
+	if (response.sharedWithMe.length === 0) {
 		const mutationArgs = {
 			userId, // TODO change
 			collection: JSON.stringify([link]),

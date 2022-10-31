@@ -1,6 +1,5 @@
 import { graphQLClient } from '../endpoint';
-import { genericMeta } from '../utils';
-import { objectToGraphqlArgs, objectToGraphqlMutationArgs } from 'hasura-args';
+import { objectToGraphqlArgs } from 'hasura-args';
 import { gql } from 'graphql-request';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -49,7 +48,7 @@ const refreshSharingLink = async (req, res) => {
 			}
 		`;
 		const queryResponse = await graphQLClient.request(query);
-		if (queryResponse[__typename].length != 0) {
+		if (queryResponse[__typename].length !== 0) {
 			const mutationArgs = {
 				where: {
 					[`${__typename}Id`]: { _eq: queryResponse[__typename][0].id },

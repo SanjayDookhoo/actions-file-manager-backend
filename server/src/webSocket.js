@@ -35,7 +35,7 @@ const createSubscriptionObservable = (wsurl, query, variables) => {
 const subscriptionClient = async ({ __typename, type, folderId, token }) => {
 	const userId = getUserId({ token });
 
-	if (type == 'itemList') {
+	if (type === 'itemList') {
 		const { args, accessType } = await getRootFolderArgsAndAccessType({
 			folderId,
 			userId,
@@ -59,7 +59,7 @@ const subscriptionClient = async ({ __typename, type, folderId, token }) => {
 							lastAccessed
 						}
 						size
-						${__typename == 'file' ? 'mimeType' : ''}
+						${__typename === 'file' ? 'mimeType' : ''}
 					}
 				}
 			`;
@@ -72,7 +72,7 @@ const subscriptionClient = async ({ __typename, type, folderId, token }) => {
 			),
 			accessType,
 		};
-	} else if (type == 'aggregate' && folderId == 'Recycle bin') {
+	} else if (type === 'aggregate' && folderId === 'Recycle bin') {
 		const args = {
 			where: { deletedInRootToUserId: { _eq: userId } },
 		};
@@ -95,7 +95,11 @@ const subscriptionClient = async ({ __typename, type, folderId, token }) => {
 				subscribeQuery(__typename)
 			),
 		};
-	} else if (type == 'size' && folderId == 'Home' && __typename == 'folder') {
+	} else if (
+		type === 'size' &&
+		folderId === 'Home' &&
+		__typename === 'folder'
+	) {
 		const args = {
 			where: { folderId: { _isNull: true }, meta: { userId: { _eq: userId } } },
 		};
@@ -166,9 +170,9 @@ export const webSocket = (server) => {
 
 					const mostRecent = consumers.find(
 						(consumer) =>
-							consumer.__typename == __typename && consumer.type == type
+							consumer.__typename === __typename && consumer.type === type
 					);
-					if (mostRecent.id == id) {
+					if (mostRecent.id === id) {
 						socket.send(
 							JSON.stringify({ status: 200, data: eventData.data, accessType })
 						);
@@ -181,20 +185,23 @@ export const webSocket = (server) => {
 				}
 			);
 
-			const consumer = consumers.find((consumer) => consumer.id == id);
+			const consumer = consumers.find((consumer) => consumer.id === id);
 			if (consumer) consumer.subscription = subscription;
 
 			const mostRecent = consumers.find(
-				(consumer) => consumer.__typename == __typename && consumer.type == type
+				(consumer) =>
+					consumer.__typename === __typename && consumer.type === type
 			);
 
 			const toRemove = consumers.filter(
-				(consumer) => !(consumer.id == mostRecent?.id)
+				(consumer) => !(consumer.id === mostRecent?.id)
 			);
 
 			// console.log(toRemove);
 
-			consumers = consumers.filter((consumer) => consumer.id == mostRecent?.id);
+			consumers = consumers.filter(
+				(consumer) => consumer.id === mostRecent?.id
+			);
 
 			toRemove.forEach((consumer) => {
 				if (consumer?.subscription?.unsubscribe) {

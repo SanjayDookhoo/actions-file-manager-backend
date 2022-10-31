@@ -1,18 +1,12 @@
 import { graphQLClient } from '../endpoint';
-import {
-	genericMeta,
-	getRootFolderArgsAndAccessType,
-	getUserId,
-	update,
-} from '../utils';
+import { getRootFolderArgsAndAccessType, getUserId, update } from '../utils';
 import { objectToGraphqlArgs } from 'hasura-args';
 import { gql } from 'graphql-request';
 
 const search = async (req, res) => {
 	const userId = getUserId({ req });
 	const { search, folderId } = req.body;
-	let searchResponse = [],
-		graphqlResponse;
+	let searchResponse = [];
 
 	/**
 	 * if search is 'test   5'
@@ -20,7 +14,7 @@ const search = async (req, res) => {
 	 * considering the case of 'tes', if the name is 'now test' or 'test now', both is valid, as long as it starts with the search term, or anywhere with a space is followed by the search term
 	 *  */
 	const orCondition = [];
-	const splitSearch = search.split(' ').filter((el) => el != ''); // ie '1   6  5' becomes ['1', '6', '5']
+	const splitSearch = search.split(' ').filter((el) => el !== ''); // ie '1   6  5' becomes ['1', '6', '5']
 	splitSearch.forEach((search) => {
 		// starts with search
 		orCondition.push({ name: { _ilike: `${search}%` } });
@@ -31,9 +25,9 @@ const search = async (req, res) => {
 	if (Number.isInteger(folderId)) {
 		// home has a root folder, so it can be searched for in here
 		searchResponse = await recursiveFolderSearch(folderId, orCondition, [], []);
-	} else if (folderId == 'Shared with me') {
+	} else if (folderId === 'Shared with me') {
 		searchResponse = await uniqueSearch(folderId, orCondition, userId);
-	} else if (folderId == 'Recycle bin') {
+	} else if (folderId === 'Recycle bin') {
 		searchResponse = await uniqueSearch(folderId, orCondition, userId);
 	}
 

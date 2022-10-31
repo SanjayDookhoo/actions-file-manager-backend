@@ -1,6 +1,6 @@
 import { graphQLClient } from '../endpoint';
-import { genericMeta, getUserId } from '../utils';
-import { objectToGraphqlArgs, objectToGraphqlMutationArgs } from 'hasura-args';
+import { getUserId } from '../utils';
+import { objectToGraphqlArgs } from 'hasura-args';
 import { gql } from 'graphql-request';
 
 const getSharingLinks = async (req, res) => {
@@ -30,9 +30,9 @@ const getSharingLinks = async (req, res) => {
 	`;
 	response = await graphQLClient.request(query);
 	response = response[`${__typename}ByPk`];
-	if (response.meta.userId != userId) {
+	if (response.meta.userId !== userId) {
 		response = response.meta.sharingPermission.sharingPermissionLinks.filter(
-			(record) => record.accessType == 'VIEW'
+			(record) => record.accessType === 'VIEW'
 		);
 	} else {
 		response = response.meta.sharingPermission.sharingPermissionLinks;

@@ -1,4 +1,3 @@
-import { response } from 'express';
 import { gql } from 'graphql-request';
 import { objectToGraphqlArgs } from 'hasura-args';
 import { graphQLClient } from './endpoint';
@@ -81,7 +80,7 @@ const authorizedForAccessType = async ({
 		// if root folder is owner, then all accessTypes are valid
 		const rootRecord = path[path.length - 1];
 		const { meta } = rootRecord;
-		if (meta.userId == userId) {
+		if (meta.userId === userId) {
 			isAuthorized = true;
 		}
 
@@ -89,10 +88,10 @@ const authorizedForAccessType = async ({
 		if (!isAuthorized) {
 			for (const record of path) {
 				let isIncluded;
-				if (accessType == 'EDIT') {
+				if (accessType === 'EDIT') {
 					const editPermissionOfThisFile =
 						record.meta.sharingPermission.sharingPermissionLinks.find(
-							(el) => el.accessType == 'EDIT'
+							(el) => el.accessType === 'EDIT'
 						);
 					isIncluded = userCollection.includes(editPermissionOfThisFile.link);
 
@@ -100,7 +99,7 @@ const authorizedForAccessType = async ({
 						isAuthorized = true;
 						break;
 					}
-				} else if (accessType == 'VIEW') {
+				} else if (accessType === 'VIEW') {
 					// either permission is okay for view
 					isIncluded = userCollection.includes(
 						record.meta.sharingPermission.sharingPermissionLinks[0].link
@@ -155,7 +154,7 @@ const sharingCollectionOfUserFetch = async ({ userId }) => {
 		}
 	`;
 	response = await graphQLClient.request(query);
-	return response.sharedWithMe.length == 0
+	return response.sharedWithMe.length === 0
 		? []
 		: JSON.parse(response.sharedWithMe[0].collection);
 };

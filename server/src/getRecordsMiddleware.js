@@ -1,62 +1,60 @@
-import { response } from 'express';
 import { gql } from 'graphql-request';
 import { objectToGraphqlArgs } from 'hasura-args';
 import { graphQLClient } from './endpoint';
 import { Records } from './Records';
-import { getUserId } from './utils';
 
 export const getRecordsMiddleware = async (req, res, next) => {
 	let selectedFolders = [],
 		selectedFiles = [];
 
 	// assign selectedFolders and selected Files
-	if (req.url == '/remove') {
+	if (req.url === '/remove') {
 		selectedFolders = req.body.selectedFolders;
 		selectedFiles = req.body.selectedFiles;
-	} else if (req.url == '/rename') {
+	} else if (req.url === '/rename') {
 		const { id, __typename } = req.body;
-		if (__typename == 'folder') selectedFolders = [id];
+		if (__typename === 'folder') selectedFolders = [id];
 		else selectedFiles = [id];
-	} else if (req.url == '/paste') {
+	} else if (req.url === '/paste') {
 		const { folderId } = req.body;
 		selectedFolders = [folderId];
-	} else if (req.url == '/cut') {
+	} else if (req.url === '/cut') {
 		selectedFolders = req.body.selectedFolders;
 		selectedFiles = req.body.selectedFiles;
-	} else if (req.url == '/createNewFolder') {
+	} else if (req.url === '/createNewFolder') {
 		const { folderId } = req.body;
 		selectedFolders = [folderId];
-	} else if (req.url == '/upload') {
+	} else if (req.url === '/upload') {
 		const folderId = req.headers.folderid;
 		selectedFolders = [folderId];
-	} else if (req.url == '/getSharingLinks') {
+	} else if (req.url === '/getSharingLinks') {
 		const { id, __typename } = req.body;
-		if (__typename == 'folder') selectedFolders = [id];
+		if (__typename === 'folder') selectedFolders = [id];
 		else selectedFiles = [id];
-	} else if (req.url == '/getFolderName') {
+	} else if (req.url === '/getFolderName') {
 		const { id } = req.body;
 		selectedFolders = [id];
-	} else if (req.url == '/downloadFile') {
+	} else if (req.url === '/downloadFile') {
 		const { id } = req.body;
 		selectedFiles = [id];
-	} else if (req.url == '/copy') {
+	} else if (req.url === '/copy') {
 		selectedFolders = req.body.selectedFolders;
 		selectedFiles = req.body.selectedFiles;
-	} else if (req.url == '/search') {
+	} else if (req.url === '/search') {
 		const { folderId } = req.body;
 		if (Number.isInteger(folderId)) {
 			selectedFolders = [folderId];
 		}
-	} else if (req.url == '/refreshSharingLink') {
+	} else if (req.url === '/refreshSharingLink') {
 		const { id, __typename } = await getFolderFileIdFromSharingLink(
 			req.body.id
 		);
-		if (__typename == 'folder') selectedFolders = [id];
+		if (__typename === 'folder') selectedFolders = [id];
 		else selectedFiles = [id];
-	} else if (req.url == '/permanentlyDelete') {
+	} else if (req.url === '/permanentlyDelete') {
 		selectedFolders = req.body.selectedFolders ?? [];
 		selectedFiles = req.body.selectedFiles ?? [];
-	} else if (req.url == '/restore') {
+	} else if (req.url === '/restore') {
 		selectedFolders = req.body.selectedFolders ?? [];
 		selectedFiles = req.body.selectedFiles ?? [];
 	}
@@ -110,7 +108,7 @@ const getFolderpaths = async ({ id, __typename, data }) => {
 				folderId
 				size
 				deletedInRootToUserId
-				${__typename == 'folder' ? 'trashSize' : ''}
+				${__typename === 'folder' ? 'trashSize' : ''}
 				meta {
 					userId
 					sharingPermission{
@@ -153,7 +151,7 @@ const getFolderFileIdFromSharingLink = async (id) => {
 		}
 	`;
 	response = await graphQLClient.request(query);
-	if (response.folder.length != 0)
+	if (response.folder.length !== 0)
 		return { id: response.folder[0].id, __typename: 'folder' };
 
 	query = gql`
@@ -164,6 +162,6 @@ const getFolderFileIdFromSharingLink = async (id) => {
 		}
 	`;
 	response = await graphQLClient.request(query);
-	if (response.file.length != 0)
+	if (response.file.length !== 0)
 		return { id: response.file[0].id, __typename: 'file' };
 };
