@@ -31,10 +31,6 @@ const uploadFromStream = ({ ext, uuid, pending, thumbnail = false }) => {
 	return pass;
 };
 
-const resizeStream = sharp().resize(200, 200, {
-	fit: 'inside',
-});
-
 // https://groups.google.com/g/nodejs/c/p1YGPE4euLU?pli=1
 const upload = async (req, res) => {
 	// storedName is a unique id is used to prevent duplicate filenames from overwriting files, this check for duplicates will have to happen on the database side
@@ -60,6 +56,19 @@ const upload = async (req, res) => {
 			const ext = name.split('.').pop();
 			const uuid = uuidv4();
 
+			const resizeStream = sharp()
+				.resize(200, 200, {
+					fit: 'inside',
+				})
+				.pipe(
+					uploadFromStream({
+						ext,
+						uuid,
+						pending: pendingThumbnailFileWrites,
+						thumbnail: true,
+					})
+				);
+
 			if (mimeType.startsWith('image/')) {
 				// https://stackoverflow.com/questions/31807073/node-busboy-get-file-size
 				// gets total file size of stream
@@ -68,14 +77,6 @@ const upload = async (req, res) => {
 					.pipe(m)
 					.pipe(uploadFromStream({ ext, uuid, pending: pendingFileWrites }))
 					.pipe(resizeStream)
-					.pipe(
-						uploadFromStream({
-							ext,
-							uuid,
-							pending: pendingThumbnailFileWrites,
-							thumbnail: true,
-						})
-					)
 					.on('finish', function () {
 						fileMeta.push({
 							size: m.bytes,
