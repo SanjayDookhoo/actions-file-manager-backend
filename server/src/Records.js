@@ -22,8 +22,14 @@ export class Records {
 		const arr = [];
 		let folderId = id;
 
+		// file
+		const record = files[folderId];
+		arr.push(record);
+		folderId = record.folderId;
+
+		// search folders
 		while (folderId) {
-			const record = files[folderId] ?? folders[folderId]; // search folders eventually, files only needed for the first file
+			const record = folders[folderId];
 			arr.push(record);
 			folderId = record.folderId;
 		}

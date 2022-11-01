@@ -2,7 +2,6 @@ import { graphQLClient } from '../endpoint';
 import { objectToGraphqlArgs } from 'hasura-args';
 import { gql } from 'graphql-request';
 
-// because the newFolder has some meta assigned to it, it will be better to handle the entire folder creation on the backend
 const downloadFile = async (req, res) => {
 	const { id } = req.body;
 
