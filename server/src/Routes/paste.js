@@ -11,6 +11,7 @@ import { objectToGraphqlArgs, objectToGraphqlMutationArgs } from 'hasura-args';
 import s3 from '../s3.js';
 import { getRecords } from '../getRecordsMiddleware';
 import { Records } from '../Records';
+import { gql } from 'graphql-request';
 
 const { S3_BUCKET } = process.env;
 

@@ -29,7 +29,7 @@ import { getRecordsMiddleware } from './getRecordsMiddleware.js';
 
 overrideConsole();
 
-const { PORT } = process.env;
+const { SERVER_PORT } = process.env;
 
 export const clipboard = {};
 
@@ -83,6 +83,6 @@ app.post('/addSharedWithMe', addSharedWithMe);
 
 app.use(errorHandler);
 
-server.listen(PORT, () => {
-	console.log(`Example app listening at http://localhost:${PORT}`);
+server.listen(SERVER_PORT, () => {
+	console.log(`Example app listening at http://localhost:${SERVER_PORT}`);
 });
