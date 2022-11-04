@@ -205,9 +205,12 @@ export const folderSizesMutationUpdates = async (
 		updates = [...updates, ...newUpdates];
 	}
 
+	const { USER_MAX_SIZE_CHECK } = process.env;
+	const _userMaxSizeCheck = eval(USER_MAX_SIZE_CHECK);
 	// console.log(newRootSizesByUserId);
 	for (const [userId, newSize] of Object.entries(newRootSizesByUserId)) {
-		if (newSize > (await userMaxSizeCheck(userId))) {
+		const userMaxSizeCheck = await _userMaxSizeCheck(userId);
+		if (newSize > userMaxSizeCheck) {
 			// similar error to what hasura generates
 			throw {
 				response: {
@@ -219,14 +222,6 @@ export const folderSizesMutationUpdates = async (
 
 	// update folders mutation
 	return updates;
-};
-
-// TODO: allow making async call here to get the userId role details from another database (in the event that a user is writing to another users file manager)
-// the role will be used to determine the max size, and that is checked here, throw an error if writing shouldnt be allowed
-// testing
-const userMaxSizeCheck = async (userId) => {
-	// return 11044304;
-	return 99544015222255;
 };
 
 export const folderTrashSizesMutationUpdates = (
