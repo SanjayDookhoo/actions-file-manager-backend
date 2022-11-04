@@ -55,20 +55,20 @@ const upload = async (req, res) => {
 			const ext = name.split('.').pop();
 			const uuid = uuidv4();
 
-			const resizeStream = sharp()
-				.resize(200, 200, {
-					fit: 'inside',
-				})
-				.pipe(
-					uploadFromStream({
-						ext,
-						uuid,
-						pending: pendingThumbnailFileWrites,
-						thumbnail: true,
-					})
-				);
-
 			if (mimeType.startsWith('image/')) {
+				const resizeStream = sharp()
+					.resize(200, 200, {
+						fit: 'inside',
+					})
+					.pipe(
+						uploadFromStream({
+							ext,
+							uuid,
+							pending: pendingThumbnailFileWrites,
+							thumbnail: true,
+						})
+					);
+
 				// https://stackoverflow.com/questions/31807073/node-busboy-get-file-size
 				// gets total file size of stream
 				var m = meter();
