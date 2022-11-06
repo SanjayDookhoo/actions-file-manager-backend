@@ -50,6 +50,7 @@ services:
       SECRET_HEADER: ${SECRET_HEADER}
       GRAPHQL_ENDPOINT: ${GRAPHQL_ENDPOINT}
       GRAPHQL_ENDPOINT_WS: ${GRAPHQL_ENDPOINT_WS}
+      USER_MAX_SIZE_CHECK: ${USER_MAX_SIZE_CHECK}
   s3-local:
     image: devoxa/s3rver
     ports:
