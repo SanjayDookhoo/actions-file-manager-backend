@@ -4,6 +4,7 @@ import {
 	getUserId,
 	thumbnailName,
 	folderSizesMutationUpdates,
+	throwErr,
 } from '../utils';
 import { v4 as uuidv4 } from 'uuid';
 import { graphQLClient } from '../endpoint.js';
@@ -47,16 +48,9 @@ const paste = async (req, res) => {
 			idsOfFolderPathPastingInto.includes(el)
 		);
 		if (found) {
-			throw {
-				response: {
-					errors: [
-						{
-							message:
-								'The destination folder is a subfolder of the source folder',
-						},
-					],
-				},
-			};
+			throw throwErr(
+				'The destination folder is a subfolder of the source folder'
+			);
 		}
 
 		const folderArgs = {

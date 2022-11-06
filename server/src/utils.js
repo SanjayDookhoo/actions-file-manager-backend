@@ -212,11 +212,7 @@ export const folderSizesMutationUpdates = async (
 		const userMaxSizeCheck = await _userMaxSizeCheck(userId);
 		if (newSize > userMaxSizeCheck) {
 			// similar error to what hasura generates
-			throw {
-				response: {
-					errors: [{ message: 'Not enough available space' }],
-				},
-			};
+			throw throwErr('Not enough available space');
 		}
 	}
 
@@ -247,4 +243,16 @@ export const folderTrashSizesMutationUpdates = (
 	}
 	// update folders mutation
 	return updates;
+};
+
+export const throwErr = (message) => {
+	return {
+		response: {
+			errors: [
+				{
+					message,
+				},
+			],
+		},
+	};
 };
