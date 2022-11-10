@@ -27,6 +27,8 @@ import getRootUserFolder from './Routes/getRootUserFolder.js';
 import 'express-async-errors'; // allows for a global level try catch https://stackoverflow.com/a/57527735/4224964
 import { getRecordsMiddleware } from './getRecordsMiddleware.js';
 import getTotalSize from './Routes/getTotalSize.js';
+import initialize from './Routes/initialize.js';
+import demoDeleteFolder from './Routes/demoDeleteFolder.js';
 
 overrideConsole();
 
@@ -79,6 +81,9 @@ app.post('/refreshSharingLink', ownerCheck, refreshSharingLink);
 app.post('/permanentlyDeleteFile', permanentlyDeleteFile); // checking inside file for a secret header
 app.post('/getRootUserFolder', getRootUserFolder);
 app.post('/getTotalSize', ownerCheck, getTotalSize);
+
+app.post('/initialize', initialize);
+app.post('/demoDeleteFolder', demoDeleteFolder);
 
 // shouldnt need a check
 app.post('/addSharedWithMe', addSharedWithMe);

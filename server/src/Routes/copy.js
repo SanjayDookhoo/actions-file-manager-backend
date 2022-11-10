@@ -11,7 +11,8 @@ const copy = async (req, res) => {
 		type: 'copy',
 	};
 
-	res.status(200).json({ message: 'Added to clipboard, copy' });
+	if (!res.locals.initialize)
+		res.status(200).json({ message: 'Added to clipboard, copy' });
 };
 
 export default copy;

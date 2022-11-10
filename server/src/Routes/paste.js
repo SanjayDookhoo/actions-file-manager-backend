@@ -153,6 +153,7 @@ const paste = async (req, res) => {
 					userId,
 					totalSize,
 					records,
+					initialize: res.locals.initialize,
 				});
 			}
 		}
@@ -186,49 +187,61 @@ const paste = async (req, res) => {
 			userId,
 			totalSize,
 			records,
+			initialize: res.locals.initialize,
 		});
 	}
 
-	res.status(200).json({ message: 'successfully pasted' });
+	if (!res.locals.initialize)
+		res.status(200).json({ message: 'successfully pasted' });
 };
 
 export default paste;
 
-const copyFiles = async ({ files, folderId, userId, totalSize, records }) => {
+const copyFiles = async ({
+	files,
+	folderId,
+	userId,
+	totalSize,
+	records,
+	initialize,
+}) => {
 	const args = [];
 	files.forEach((file) => {
 		const { storedName, ...fileFields } = file;
-		let params;
+		let newStoredName;
 
-		const storedNameSplit = storedName.split('.');
-		const newStoredName = `${uuidv4()}.${
-			storedNameSplit[storedNameSplit.length - 1]
-		}`;
+		if (!initialize) {
+			let params;
 
-		// copy files in s3
-		params = {
-			Bucket: S3_BUCKET,
-			CopySource: `/${S3_BUCKET}/${storedName}`,
-			Key: newStoredName,
-		};
-		s3.copyObject(params, function (err, data) {
-			// if (err) console.log(err, err.stack); // an error occurred
-			// else console.log(data); // successful response
-		});
-		params = {
-			Bucket: S3_BUCKET,
-			CopySource: `/${S3_BUCKET}/${storedName}`,
-			Key: thumbnailName(newStoredName),
-		};
-		s3.copyObject(params, function (err, data) {
-			// if (err) console.log(err, err.stack); // an error occurred
-			// else console.log(data); // successful response
-		});
+			const storedNameSplit = storedName.split('.');
+			newStoredName = `${uuidv4()}.${
+				storedNameSplit[storedNameSplit.length - 1]
+			}`;
 
+			// copy files in s3
+			params = {
+				Bucket: S3_BUCKET,
+				CopySource: `/${S3_BUCKET}/${storedName}`,
+				Key: newStoredName,
+			};
+			s3.copyObject(params, function (err, data) {
+				// if (err) console.log(err, err.stack); // an error occurred
+				// else console.log(data); // successful response
+			});
+			params = {
+				Bucket: S3_BUCKET,
+				CopySource: `/${S3_BUCKET}/${storedName}`,
+				Key: thumbnailName(newStoredName),
+			};
+			s3.copyObject(params, function (err, data) {
+				// if (err) console.log(err, err.stack); // an error occurred
+				// else console.log(data); // successful response
+			});
+		}
 		// create new file records for the database
 		const data = {
 			...fileFields,
-			storedName: newStoredName,
+			storedName: initialize ? storedName : newStoredName,
 			folderId,
 			meta: genericMeta({ userId }),
 		};
@@ -293,6 +306,7 @@ const recursiveFolderCopy = async ({
 	userId,
 	totalSize,
 	records,
+	initialize,
 }) => {
 	let graphqlResponse;
 
@@ -330,6 +344,7 @@ const recursiveFolderCopy = async ({
 			userId,
 			totalSize,
 			records,
+			initialize,
 		});
 	}
 
@@ -360,5 +375,6 @@ const recursiveFolderCopy = async ({
 		userId,
 		totalSize,
 		records,
+		initialize,
 	});
 };

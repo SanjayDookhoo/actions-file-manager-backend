@@ -1,3 +1,4 @@
+import { demoNoDeleteFilesStoredName } from '../constants.js';
 import s3 from '../s3.js';
 import { thumbnailName } from '../utils.js';
 const { S3_BUCKET, SECRET_HEADER } = process.env;
@@ -6,6 +7,9 @@ const { S3_BUCKET, SECRET_HEADER } = process.env;
 // https://stackoverflow.com/questions/27753411/how-do-i-delete-an-object-on-aws-s3-using-javascript
 const permanentlyDeleteFile = async (req, res) => {
 	const { stored_name: storedName } = req.body.event.data.old;
+	if (demoNoDeleteFilesStoredName.includes(storedName))
+		return res.status(200).json({ message: 'done' });
+
 	let params;
 
 	if (req.headers.secret_header !== SECRET_HEADER) {
