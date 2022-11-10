@@ -173,7 +173,8 @@ const upload = async (req, res) => {
 					}
 
 					fileWrites.forEach((file, i) => {
-						const { Key } = file;
+						let { Key } = file;
+						Key = Key.replace(S3_BUCKET + '/', ''); // sometimes Key includes the bucket name prepended for some reason?
 						const { name, size, mimeType } = fileMeta[i];
 						const filePath = filesPath[i];
 
