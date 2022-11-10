@@ -131,6 +131,7 @@ const paste = async (req, res) => {
 		const selectedFoldersQuery = gql`
 			query {
 				folder(${objectToGraphqlArgs(selectedFoldersQueryArguments)}) {
+					id
 					name
 				}
 			}
@@ -145,17 +146,14 @@ const paste = async (req, res) => {
 				records,
 			});
 
-			// handle nested folders
-			for (const folderId of selectedFolders) {
-				await recursiveFolderCopy({
-					folderIdToCopy: folderId,
-					folderIdToCreateIn: id,
-					userId,
-					totalSize,
-					records,
-					initialize: res.locals.initialize,
-				});
-			}
+			await recursiveFolderCopy({
+				folderIdToCopy: folder.id,
+				folderIdToCreateIn: id,
+				userId,
+				totalSize,
+				records,
+				initialize: res.locals.initialize,
+			});
 		}
 
 		// copy selected Files
