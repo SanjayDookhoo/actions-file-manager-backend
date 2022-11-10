@@ -246,11 +246,13 @@ const copyFiles = async ({
 		args.push(data);
 	});
 
+	const size = files.reduce((partialSum, file) => partialSum + file.size, 0);
+
 	const folderSizesUpdates = await folderSizesMutationUpdates(records, [
 		{
 			id: folderId,
 			inc: true,
-			size: totalSize,
+			size,
 		},
 	]);
 
