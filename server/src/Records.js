@@ -70,12 +70,15 @@ export class Records {
 		const path = this.getFolderPath(id);
 		const length = path.length;
 		return path[length - 1];
+		// console.log(path);
+		// return length == 1 ? path[0] : path[length - 1];
 	}
 
 	getFileRoot(id) {
 		const path = this.getFilePath(id);
 		const length = path.length;
 		return path[length - 1];
+		// return length == 1 ? path[0] : path[length - 1];
 	}
 
 	getFolderIdsAndSizes() {
