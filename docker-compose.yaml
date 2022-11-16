@@ -51,6 +51,7 @@ services:
       GRAPHQL_ENDPOINT: ${GRAPHQL_ENDPOINT}
       GRAPHQL_ENDPOINT_WS: ${GRAPHQL_ENDPOINT_WS}
       USER_MAX_SIZE_CHECK: ${USER_MAX_SIZE_CHECK}
+      NODE_ENV: ${NODE_ENV}
   s3-local:
     image: devoxa/s3rver
     ports:
