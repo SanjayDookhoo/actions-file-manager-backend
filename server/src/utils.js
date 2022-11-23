@@ -163,9 +163,7 @@ export const getRootFolderArgsAndAccessType = async ({ folderId, userId }) => {
 };
 
 export const thumbnailName = (name) => {
-	const nameSplit = name.split('.');
-	const ext = nameSplit.pop();
-	return nameSplit.join('.') + '_thumbnail.' + ext;
+	return name + '_thumbnail';
 };
 
 // updates = [{ ids, operation, size }, { ids, operation, size }]
