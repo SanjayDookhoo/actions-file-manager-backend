@@ -2,7 +2,6 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import remove from './Routes/remove.js';
-import upload from './Routes/upload.js';
 import { graphqlHTTP } from 'express-graphql';
 import schema from './graphql/Schemas/index.js';
 import createNewFolder from './Routes/createNewFolder.js';
@@ -27,12 +26,18 @@ import getRootUserFolder from './Routes/getRootUserFolder.js';
 import 'express-async-errors'; // allows for a global level try catch https://stackoverflow.com/a/57527735/4224964
 import { getRecordsMiddleware } from './getRecordsMiddleware.js';
 import getTotalSize from './Routes/getTotalSize.js';
+import startUpload from './Routes/fileUpload/startUpload.js';
+import getUploadUrl from './Routes/fileUpload/getUploadUrl.js';
+import completeUpload from './Routes/fileUpload/completeUpload.js';
+import requestBatchUpload from './Routes/fileUpload/requestBatchUpload.js';
+import completeBatchUpload from './Routes/fileUpload/completeBatchUpload.js';
 
 overrideConsole();
 
 const { SERVER_PORT } = process.env;
 
 export const clipboard = {};
+export const upload = {};
 
 export const errorHandler = (err, req, res, next) => {
 	const errors = err?.response?.errors;
@@ -61,7 +66,12 @@ app.use(
 
 app.use(getRecordsMiddleware);
 
-app.post('/upload', userEditCheck, upload);
+app.get('/requestBatchUpload', userEditCheck, requestBatchUpload);
+app.get('/startUpload', startUpload);
+app.get('/getUploadUrl', getUploadUrl);
+app.post('/completeUpload', completeUpload);
+app.post('/completeBatchUpload', completeBatchUpload);
+
 app.post('/createNewFolder', userEditCheck, createNewFolder);
 app.post('/cut', userEditCheck, cut);
 app.post('/paste', userEditCheck, paste);

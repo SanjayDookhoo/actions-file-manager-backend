@@ -24,8 +24,8 @@ export const getRecordsMiddleware = async (req, res, next) => {
 	} else if (req.url === '/createNewFolder') {
 		const { folderId } = req.body;
 		selectedFolders = [folderId];
-	} else if (req.url === '/upload') {
-		const folderId = req.headers.folderid;
+	} else if (req.url === '/requestBatchUpload') {
+		const folderId = req.query.folderid;
 		selectedFolders = [folderId];
 	} else if (req.url === '/getSharingLinks') {
 		const { id, __typename } = req.body;
