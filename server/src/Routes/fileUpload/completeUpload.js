@@ -70,11 +70,20 @@ const completeUpload = async (req, res) => {
 			type,
 		});
 	} else {
+		// params = {
+		// 	Bucket: S3_BUCKET,
+		// 	Key: storedName,
+		// };
+		// const obj = await s3.headObject(params).promise();
+
+		// headObject does not work for some reason, presumably, access needs to be granted specifically for that, since it cant be anonymouse like getObject
+		// therefore getObject with the smallest range possible
 		params = {
 			Bucket: S3_BUCKET,
 			Key: storedName,
+			Range: 'bytes=0-0', // example Range: 'bytes=0-1024' https://aws.plainenglish.io/optimize-your-aws-s3-performance-27b057f231a3
 		};
-		const obj = await s3.headObject(params).promise();
+		const obj = await s3.getObject(params).promise();
 
 		upload[batchId].push({
 			storedName,
