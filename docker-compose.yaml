@@ -36,7 +36,7 @@ services:
       HASURA_GRAPHQL_EXPERIMENTAL_FEATURES: naming_convention
       HASURA_GRAPHQL_DEFAULT_NAMING_CONVENTION: "graphql-default"
   actions-file-manager:
-    image: actions-file-manager:1.0
+    image: actions-file-manager
     ports:
       - "${SERVER_PORT}:${SERVER_PORT}"
     restart: always
@@ -52,12 +52,5 @@ services:
       GRAPHQL_ENDPOINT_WS: ${GRAPHQL_ENDPOINT_WS}
       USER_MAX_SIZE_CHECK: ${USER_MAX_SIZE_CHECK}
       NODE_ENV: ${NODE_ENV}
-  s3-local:
-    image: devoxa/s3rver
-    ports:
-      - "4568:4568"
-    restart: always
-    environment:
-      ARGS: "--address 0.0.0.0 --configure-bucket test-bucket.localhost"
 volumes:
   db_data:
