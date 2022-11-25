@@ -6,6 +6,7 @@ import { graphQLClient } from './endpoint';
 import gql from 'graphql-tag';
 import { userAccessTypeCheck } from './userCheck';
 import { getRecords } from './getRecordsMiddleware';
+import axios from 'axios';
 
 export const genericMeta = ({ req, userId }) => {
 	return {
@@ -207,7 +208,7 @@ export const folderSizesMutationUpdates = async (
 	const _userMaxSizeCheck = eval(USER_MAX_SIZE_CHECK);
 	// console.log(newRootSizesByUserId);
 	for (const [userId, newSize] of Object.entries(newRootSizesByUserId)) {
-		const userMaxSizeCheck = await _userMaxSizeCheck(userId);
+		const userMaxSizeCheck = await _userMaxSizeCheck(userId, axios);
 		if (newSize > userMaxSizeCheck) {
 			// similar error to what hasura generates
 			throw throwErr('Not enough available space');
