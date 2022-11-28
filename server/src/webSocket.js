@@ -32,9 +32,7 @@ const createSubscriptionObservable = (wsurl, query, variables) => {
 	return execute(link, { query: query, variables: variables });
 };
 
-const subscriptionClient = async ({ __typename, type, folderId, token }) => {
-	const userId = getUserId({ token });
-
+const subscriptionClient = async ({ __typename, type, folderId, userId }) => {
 	if (type === 'itemList') {
 		const { args, accessType } = await getRootFolderArgsAndAccessType({
 			folderId,
@@ -150,7 +148,7 @@ export const webSocket = (server) => {
 		let consumers = [];
 		socket.on('message', async (_data) => {
 			const data = JSON.parse(_data);
-			const { __typename, id, type } = data;
+			const { __typename, id, type, token } = data;
 
 			// add to list of consumers, so the most recent consumer will be what is returning a result to the frontend
 			// stale queries wont conflict with new queries
@@ -160,8 +158,15 @@ export const webSocket = (server) => {
 				type,
 			});
 
+			const userId = getUserId({ token });
+			if (!userId) {
+				socket.send(JSON.stringify({ status: 403 }));
+				return;
+			}
+
 			const { subscriptionObservable, accessType } = await subscriptionClient({
 				...data,
+				userId,
 			});
 
 			const subscription = subscriptionObservable.subscribe(
