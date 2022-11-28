@@ -8,6 +8,8 @@ import { userAccessTypeCheck } from './userCheck';
 import { getRecords } from './getRecordsMiddleware';
 import axios from 'axios';
 
+const { TOKEN_FILTER } = process.env;
+
 export const genericMeta = ({ req, userId }) => {
 	return {
 		userId: userId ? userId : getUserId({ req }),
@@ -31,7 +33,45 @@ export const getUserId = ({ req, token }) => {
 	if (!auth && !token) return null;
 
 	const decoded = jwt.decode(token ? token : auth.split(' ')[1]);
-	return decoded['https://hasura.io/jwt/claims']['x-hasura-user-id']; // TODO, user needs to enter the path to the id
+
+	const _jq = (obj, transform) => {
+		const transformSplit = transform.split('.');
+		let finalTransformSplit = [];
+		let carryOverPush = '';
+
+		// TOKEN_FILTER='."https://hasura.io/jwt/claims"."x-hasura-user-id"', if there is a dot inside the quotes, it needs to be merged
+		transformSplit.forEach((el) => {
+			if (carryOverPush != '') {
+				if (el.charAt(el.length - 1) == `"`) {
+					carryOverPush += '.' + el.slice(0, -1);
+					finalTransformSplit.push(carryOverPush);
+					carryOverPush = '';
+				} else {
+					carryOverPush += '.' + el;
+				}
+			} else if (el.charAt(0) == `"` && el.charAt(el.length - 1) == `"`) {
+				finalTransformSplit.push(el.slice(1, -1));
+			} else if (el.charAt(0) == `"` && el.charAt(el.length - 1) != `"`) {
+				carryOverPush += el.slice(1);
+			} else {
+				finalTransformSplit.push(el);
+			}
+		});
+
+		let temp = obj;
+
+		for (const el of finalTransformSplit) {
+			if (el != '') {
+				temp = temp[el];
+				if (!temp) break;
+			}
+		}
+		return temp;
+	};
+
+	const userId = _jq(decoded, TOKEN_FILTER);
+
+	return userId;
 };
 
 export const update = _update; // does not allow vs code importing because it is not a named export, this makes it easier
