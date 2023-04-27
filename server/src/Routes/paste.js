@@ -211,10 +211,7 @@ const copyFiles = async ({
 		if (!initialize) {
 			let params;
 
-			const storedNameSplit = storedName.split('.');
-			newStoredName = `${uuidv4()}.${
-				storedNameSplit[storedNameSplit.length - 1]
-			}`;
+			newStoredName = uuidv4()
 
 			// copy files in s3
 			params = {
