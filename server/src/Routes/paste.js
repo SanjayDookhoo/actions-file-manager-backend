@@ -225,7 +225,7 @@ const copyFiles = async ({
 			});
 			params = {
 				Bucket: S3_BUCKET,
-				CopySource: `/${S3_BUCKET}/${storedName}`,
+				CopySource: `/${S3_BUCKET}/${thumbnailName(storedName)}`,
 				Key: thumbnailName(newStoredName),
 			};
 			s3.copyObject(params, function (err, data) {
