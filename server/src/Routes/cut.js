@@ -1,5 +1,5 @@
-import { clipboard } from '..';
-import { getUserId } from '../utils';
+import { clipboard } from '../index.js';
+import { getUserId } from '../utils.js';
 
 const cut = async (req, res) => {
 	const userId = getUserId({ req });

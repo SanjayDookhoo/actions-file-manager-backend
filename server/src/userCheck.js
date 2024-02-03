@@ -1,7 +1,7 @@
 import { gql } from 'graphql-request';
 import { objectToGraphqlArgs } from 'hasura-args';
-import { graphQLClient } from './endpoint';
-import { getUserId } from './utils';
+import { graphQLClient } from './endpoint.js';
+import { getUserId } from './utils.js';
 
 export const userEditCheck = async (req, res, next) => {
 	const userId = getUserId({ req });

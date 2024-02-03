@@ -1,4 +1,4 @@
-import { getUserId } from '../utils';
+import { getUserId } from '../utils.js';
 import axios from 'axios';
 
 const getTotalSize = async (req, res) => {

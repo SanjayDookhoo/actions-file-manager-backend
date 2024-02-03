@@ -1,5 +1,5 @@
-import { graphQLClient } from '../endpoint';
-import { capitalizeFirstLetter } from '../utils';
+import { graphQLClient } from '../endpoint.js';
+import { capitalizeFirstLetter } from '../utils.js';
 import { objectToGraphqlArgs } from 'hasura-args';
 import { gql } from 'graphql-request';
 

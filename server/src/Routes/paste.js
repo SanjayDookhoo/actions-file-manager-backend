@@ -1,17 +1,17 @@
-import { clipboard } from '..';
+import { clipboard } from '../index.js';
 import {
 	genericMeta,
 	getUserId,
 	thumbnailName,
 	folderSizesMutationUpdates,
 	throwErr,
-} from '../utils';
+} from '../utils.js';
 import { v4 as uuidv4 } from 'uuid';
 import { graphQLClient } from '../endpoint.js';
 import { objectToGraphqlArgs, objectToGraphqlMutationArgs } from 'hasura-args';
 import s3 from '../s3.js';
-import { getRecords } from '../getRecordsMiddleware';
-import { Records } from '../Records';
+import { getRecords } from '../getRecordsMiddleware.js';
+import { Records } from '../Records.js';
 import { gql } from 'graphql-request';
 
 const { S3_BUCKET } = process.env;
@@ -211,7 +211,7 @@ const copyFiles = async ({
 		if (!initialize) {
 			let params;
 
-			newStoredName = uuidv4()
+			newStoredName = uuidv4();
 
 			// copy files in s3
 			params = {

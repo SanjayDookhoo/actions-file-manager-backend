@@ -1,8 +1,8 @@
-import { graphQLClient } from '../endpoint';
-import { folderTrashSizesMutationUpdates } from '../utils';
+import { graphQLClient } from '../endpoint.js';
+import { folderTrashSizesMutationUpdates } from '../utils.js';
 import { objectToGraphqlArgs } from 'hasura-args';
 import { gql } from 'graphql-request';
-import { getRecords } from '../getRecordsMiddleware';
+import { getRecords } from '../getRecordsMiddleware.js';
 
 const permanentlyDelete = async (req, res) => {
 	const { selectedFolders, selectedFiles, all } = req.body;

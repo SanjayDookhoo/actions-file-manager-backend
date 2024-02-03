@@ -1,5 +1,5 @@
-import { graphQLClient } from '../endpoint';
-import { genericMeta } from '../utils';
+import { graphQLClient } from '../endpoint.js';
+import { genericMeta } from '../utils.js';
 import { objectToGraphqlMutationArgs } from 'hasura-args';
 import { gql } from 'graphql-request';
 

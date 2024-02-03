@@ -2,10 +2,10 @@ import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import _update from 'immutability-helper';
 import { objectToGraphqlArgs } from 'hasura-args';
-import { graphQLClient } from './endpoint';
+import { graphQLClient } from './endpoint.js';
 import gql from 'graphql-tag';
-import { userAccessTypeCheck } from './userCheck';
-import { getRecords } from './getRecordsMiddleware';
+import { userAccessTypeCheck } from './userCheck.js';
+import { getRecords } from './getRecordsMiddleware.js';
 import axios from 'axios';
 
 const { TOKEN_FILTER } = process.env;

@@ -1,5 +1,5 @@
-import { graphQLClient } from '../endpoint';
-import { getRootFolderArgsAndAccessType, getUserId, update } from '../utils';
+import { graphQLClient } from '../endpoint.js';
+import { getRootFolderArgsAndAccessType, getUserId, update } from '../utils.js';
 import { objectToGraphqlArgs } from 'hasura-args';
 import { gql } from 'graphql-request';
 

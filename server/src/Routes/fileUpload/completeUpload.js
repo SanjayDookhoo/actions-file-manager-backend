@@ -1,6 +1,6 @@
 import sharp from 'sharp';
-import { upload } from '../..';
-import s3 from '../../s3';
+import { upload } from '../../index.js';
+import s3 from '../../s3.js';
 import stream from 'stream';
 
 const { S3_BUCKET } = process.env;

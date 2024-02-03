@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { upload } from '../..';
+import { upload } from '../../index.js';
 
 const requestBatchUpload = async (req, res) => {
 	const batchId = uuidv4();

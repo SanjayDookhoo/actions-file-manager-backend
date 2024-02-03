@@ -1,7 +1,7 @@
 import { gql } from 'graphql-request';
 import { objectToGraphqlArgs } from 'hasura-args';
-import { graphQLClient } from './endpoint';
-import { Records } from './Records';
+import { graphQLClient } from './endpoint.js';
+import { Records } from './Records.js';
 
 export const getRecordsMiddleware = async (req, res, next) => {
 	let selectedFolders = [],

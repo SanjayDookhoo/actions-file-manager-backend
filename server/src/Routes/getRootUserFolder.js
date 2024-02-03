@@ -1,14 +1,14 @@
-import { graphQLClient } from '../endpoint';
-import { genericMeta, getUserId } from '../utils';
+import { graphQLClient } from '../endpoint.js';
+import { genericMeta, getUserId } from '../utils.js';
 import { objectToGraphqlArgs, objectToGraphqlMutationArgs } from 'hasura-args';
 import { gql } from 'graphql-request';
 import {
 	deleteRootFolderDelayInDemo,
 	demoFolderIdsToCopyInInitialize,
-} from '../constants';
-import copy from './copy';
-import paste from './paste';
-import { getRecords } from '../getRecordsMiddleware';
+} from '../constants.js';
+import copy from './copy.js';
+import paste from './paste.js';
+import { getRecords } from '../getRecordsMiddleware.js';
 
 const { NODE_ENV } = process.env;
 

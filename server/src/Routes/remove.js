@@ -1,8 +1,8 @@
-import { graphQLClient } from '../endpoint';
+import { graphQLClient } from '../endpoint.js';
 import {
 	folderSizesMutationUpdates,
 	folderTrashSizesMutationUpdates,
-} from '../utils';
+} from '../utils.js';
 import { objectToGraphqlArgs } from 'hasura-args';
 import { gql } from 'graphql-request';
 

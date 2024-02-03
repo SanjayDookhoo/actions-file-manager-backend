@@ -1,4 +1,4 @@
-import { upload } from '../..';
+import { upload } from '../../index.js';
 import { gql } from 'graphql-request';
 import { objectToGraphqlArgs, objectToGraphqlMutationArgs } from 'hasura-args';
 import { graphQLClient } from '../../endpoint.js';
@@ -6,7 +6,7 @@ import {
 	genericMeta,
 	getUserId,
 	folderSizesMutationUpdates,
-} from '../../utils';
+} from '../../utils.js';
 import { getRecords } from '../../getRecordsMiddleware.js';
 
 const completeBatchUpload = async (req, res) => {

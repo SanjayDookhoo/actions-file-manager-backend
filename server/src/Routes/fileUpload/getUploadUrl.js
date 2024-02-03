@@ -1,4 +1,4 @@
-import s3 from '../../s3';
+import s3 from '../../s3.js';
 
 const { S3_BUCKET } = process.env;
 

@@ -1,11 +1,11 @@
-import { graphQLClient } from '../endpoint';
+import { graphQLClient } from '../endpoint.js';
 import {
 	folderSizesMutationUpdates,
 	folderTrashSizesMutationUpdates,
-} from '../utils';
+} from '../utils.js';
 import { objectToGraphqlArgs } from 'hasura-args';
 import { gql } from 'graphql-request';
-import { getRecords } from '../getRecordsMiddleware';
+import { getRecords } from '../getRecordsMiddleware.js';
 
 const restore = async (req, res) => {
 	const { selectedFolders, selectedFiles, all } = req.body;

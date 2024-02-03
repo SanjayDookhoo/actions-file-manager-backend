@@ -1,4 +1,4 @@
-import { graphQLClient } from '../endpoint';
+import { graphQLClient } from '../endpoint.js';
 import { objectToGraphqlArgs } from 'hasura-args';
 import { gql } from 'graphql-request';
 import { v4 as uuidv4 } from 'uuid';

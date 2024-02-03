@@ -1,5 +1,5 @@
-import s3 from '../../s3';
-import { throwErr } from '../../utils';
+import s3 from '../../s3.js';
+import { throwErr } from '../../utils.js';
 
 const { S3_BUCKET } = process.env;
 

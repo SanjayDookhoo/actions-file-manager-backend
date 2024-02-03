@@ -5,8 +5,8 @@ import { WebSocketLink } from 'apollo-link-ws';
 import { SubscriptionClient } from 'subscriptions-transport-ws';
 import gql from 'graphql-tag';
 import { objectToGraphqlArgs } from 'hasura-args';
-import { graphQLClient } from './endpoint';
-import { getRootFolderArgsAndAccessType, getUserId } from './utils';
+import { graphQLClient } from './endpoint.js';
+import { getRootFolderArgsAndAccessType, getUserId } from './utils.js';
 
 const { GRAPHQL_ENDPOINT_WS } = process.env;
 

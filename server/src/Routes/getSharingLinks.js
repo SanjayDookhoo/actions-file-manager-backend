@@ -1,5 +1,5 @@
-import { graphQLClient } from '../endpoint';
-import { getUserId } from '../utils';
+import { graphQLClient } from '../endpoint.js';
+import { getUserId } from '../utils.js';
 import { objectToGraphqlArgs } from 'hasura-args';
 import { gql } from 'graphql-request';
 
